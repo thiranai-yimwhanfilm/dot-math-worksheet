@@ -1,0 +1,2582 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dot Math Worksheet Generator - โดย Yimwhan Film</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts for Thai & Latin typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600&family=Inter:wght@300;400;500;600;700&family=Noto+Sans+Thai:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- jsPDF & JSZip for high quality export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Sarabun', 'Inter', 'Noto Sans Thai', 'sans-serif'],
+            thai: ['Sarabun', 'Noto Sans Thai', 'sans-serif'],
+            display: ['Chakra Petch', 'Sarabun', 'sans-serif']
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+              800: '#3730a3'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Sarabun', 'Inter', sans-serif;
+      user-select: none;
+    }
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.04);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(100, 116, 139, 0.3);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(100, 116, 139, 0.5);
+    }
+    /* Worksheet Shadow & Canvas Frame */
+    .sheet-paper {
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+      transition: transform 0.1s ease-out;
+      background-color: #ffffff !important;
+    }
+    .safe-guide {
+      stroke: #3b82f6;
+      stroke-dasharray: 4 4;
+      stroke-width: 1;
+      opacity: 0.45;
+    }
+    .grid-line {
+      stroke: #cbd5e1;
+      stroke-width: 0.5;
+      opacity: 0.4;
+    }
+    .dot-handle {
+      cursor: grab;
+      transition: r 0.15s, stroke-width 0.15s;
+    }
+    .dot-handle:hover {
+      cursor: grab;
+      filter: drop-shadow(0 0 4px rgba(79, 70, 229, 0.8));
+    }
+    .dot-handle:active {
+      cursor: grabbing;
+    }
+    .dot-selected {
+      stroke: #ef4444 !important;
+      stroke-width: 3px !important;
+    }
+    /* Modal Backdrop */
+    .modal-backdrop {
+      background-color: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(4px);
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 flex flex-col h-screen overflow-hidden antialiased">
+
+  <header class="bg-white border-b border-slate-200 px-4 py-2.5 flex items-center justify-between z-30 shrink-0">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white shadow-md shadow-indigo-100">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <circle cx="6" cy="6" r="2.5" fill="currentColor"></circle>
+          <circle cx="18" cy="18" r="2.5" fill="currentColor"></circle>
+          <circle cx="18" cy="6" r="2.5" fill="currentColor"></circle>
+          <circle cx="6" cy="18" r="2.5" fill="currentColor"></circle>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6l12 12M6 18V6h12"></path>
+        </svg>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="text-base font-bold text-slate-800 leading-tight">Dot Math Worksheet Generator</h1>
+          <span class="text-xs bg-indigo-50 text-indigo-700 font-semibold px-2 py-0.5 rounded-full border border-indigo-200">v1.2 Pro</span>
+        </div>
+        <p class="text-xs text-slate-500 flex items-center gap-2">
+          <span>ระบบสร้างใบงานลากเส้นเชื่อมจุดและคณิตศาสตร์</span>
+          <span class="text-slate-300">•</span>
+          <span class="text-indigo-600 font-medium cursor-pointer" onclick="openModal('projectModal')">
+            <span id="headerProjectName">แบบฝึกหัดไม่ระบุชื่อ</span>
+            <svg class="w-3 h-3 inline ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+          </span>
+        </p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <!-- Undo / Redo -->
+      <div class="flex items-center bg-slate-100 rounded-lg p-0.5 border border-slate-200 mr-1">
+        <button id="btnUndo" class="p-1.5 text-slate-600 hover:text-indigo-600 hover:bg-white rounded transition disabled:opacity-35" title="ยกเลิก (Undo) Ctrl+Z">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a5 5 0 015 5v2M3 10l6-6M3 10l6 6"></path></svg>
+        </button>
+        <button id="btnRedo" class="p-1.5 text-slate-600 hover:text-indigo-600 hover:bg-white rounded transition disabled:opacity-35" title="ทำซ้ำ (Redo) Ctrl+Y">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 10H11a5 5 0 00-5 5v2m15-7l-6-6m6 6l-6 6"></path></svg>
+        </button>
+      </div>
+
+      <!-- Quick Paper Format Switcher -->
+      <div class="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-xs font-medium">
+        <button id="quickBtnA4" onclick="setPageFormat('a4')" class="px-2.5 py-1 rounded-md bg-white text-indigo-700 shadow-sm font-bold transition">
+          A4
+        </button>
+        <button id="quickBtnLetter" onclick="setPageFormat('letter')" class="px-2.5 py-1 rounded-md text-slate-600 hover:text-indigo-600 transition">
+          US Letter
+        </button>
+      </div>
+
+      <!-- Mode View Toggle: Question Sheet vs Answer Key -->
+      <div class="flex bg-slate-100 p-1 rounded-lg border border-slate-200 text-xs font-medium">
+        <button id="btnViewQuestion" class="px-3 py-1.5 rounded-md bg-white text-indigo-700 shadow-sm font-semibold transition">
+          📄 ใบงาน
+        </button>
+        <button id="btnViewAnswer" class="px-3 py-1.5 rounded-md text-slate-600 hover:text-indigo-600 transition">
+          ✅ เฉลย (Answer Key)
+        </button>
+      </div>
+
+      <!-- Blank Sheet / Custom Free Draw Quick Action -->
+      <button id="btnBlankCanvas" onclick="loadBlankCanvas()" class="flex items-center gap-1.5 text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-medium px-3 py-1.5 rounded-lg transition" title="สร้างหน้าเปล่าเพื่อวาดหรือวางจุดเอง">
+        <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+        <span>หน้าเปล่า / วาดเอง</span>
+      </button>
+
+      <!-- Custom Trace Mode Toggle Button -->
+      <button id="btnTraceModeToggle" class="flex items-center gap-1.5 text-xs bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 font-medium px-3 py-1.5 rounded-lg transition" title="โหมดวางจุดบนภาพถ่ายหรือวาดเอง">
+        <svg class="w-3.5 h-3.5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+        <span>โหมดวาด/วางจุด</span>
+      </button>
+
+      <!-- Project Management -->
+      <button onclick="openModal('projectModal')" class="flex items-center gap-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium px-3 py-1.5 rounded-lg transition">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+        <span>โปรเจกต์</span>
+      </button>
+
+      <!-- Batch Multi-Page Button -->
+      <button onclick="openModal('batchModal')" class="flex items-center gap-1 text-xs bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 font-medium px-3 py-1.5 rounded-lg transition">
+        <svg class="w-3.5 h-3.5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+        <span>สร้างชุดหลายหน้า</span>
+      </button>
+
+      <!-- Export Dropdown Button -->
+      <div class="relative">
+        <button id="btnExportMenu" class="flex items-center gap-1.5 text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded-lg shadow-sm shadow-indigo-200 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+          <span>ดาวน์โหลด</span>
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+        </button>
+        <div id="exportDropdown" class="hidden absolute right-0 mt-1 w-52 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-50 text-xs font-normal">
+          <button onclick="exportSinglePDF()" class="w-full text-left px-3 py-2 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-2">
+            <span class="text-rose-500 font-bold text-sm">PDF</span> ดาวน์โหลดเอกสาร PDF (A4/Letter)
+          </button>
+          <button onclick="exportImage('png', false)" class="w-full text-left px-3 py-2 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-2">
+            <span class="text-emerald-500 font-bold text-sm">PNG</span> บันทึกเป็นรูป PNG (พื้นขาว)
+          </button>
+          <button onclick="exportImage('png', true)" class="w-full text-left px-3 py-2 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-2">
+            <span class="text-sky-500 font-bold text-sm">PNG</span> บันทึก PNG (โปร่งใส)
+          </button>
+          <button onclick="exportSVG()" class="w-full text-left px-3 py-2 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-2">
+            <span class="text-amber-500 font-bold text-sm">SVG</span> บันทึกเวกเตอร์ SVG
+          </button>
+          <div class="h-px bg-slate-100 my-1"></div>
+          <button onclick="exportBothPDF()" class="w-full text-left px-3 py-2 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-2 text-indigo-600 font-medium">
+            <span>📑</span> ดาวน์โหลดคู่ (ใบงาน + เฉลย 2 หน้า)
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="flex-1 flex overflow-hidden">
+
+    <!-- ==================== LEFT SIDEBAR: TEMPLATE LIBRARY ==================== -->
+    <aside id="leftSidebar" class="w-80 bg-white border-r border-slate-200 flex flex-col shrink-0 z-10 transition-all duration-200">
+      <!-- Search & Category Bar -->
+      <div class="p-3 border-b border-slate-200 space-y-2">
+        <div class="relative">
+          <input type="text" id="templateSearchInput" placeholder="ค้นหาภาพหรือหมวดหมู่..." class="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <svg class="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        </div>
+        <!-- Categories horizontal pills -->
+        <div class="flex gap-1 overflow-x-auto pb-1 text-xs" id="categoryPillList">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-3 space-y-3" id="templateListContainer">
+        <!-- Template cards injected dynamically -->
+      </div>
+
+      <!-- Upload Custom Image / Trace Box -->
+      <div class="p-3 border-t border-slate-200 bg-slate-50 space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold text-slate-700">ภาพของฉัน / วาดจุดใหม่</span>
+          <label class="cursor-pointer text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-2.5 py-1 rounded-lg shadow-sm transition flex items-center gap-1">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+            <span>+ อัปโหลดภาพ</span>
+            <input type="file" id="customImageUploader" accept="image/png, image/jpeg, image/svg+xml" class="hidden">
+          </label>
+        </div>
+        <p class="text-[11px] text-slate-500 leading-tight">อัปโหลดภาพ (PNG, JPG, SVG) เพื่อวางบนหน้ากระดาษ ปรับขยาย และคลิกวางจุดลากเส้นตามรอย</p>
+      </div>
+    </aside>
+
+    <!-- ==================== CENTER: WORKSHEET CANVAS ==================== -->
+    <main class="flex-1 bg-slate-200/80 overflow-auto flex flex-col items-center justify-between p-4 relative select-none" id="canvasViewport">
+      
+      <div class="sticky top-2 z-20 flex items-center gap-2 bg-white/95 backdrop-blur shadow-md px-3 py-1.5 rounded-full border border-slate-300/80 text-xs text-slate-700">
+        <!-- Page Spec Display -->
+        <div class="flex items-center gap-1.5 pr-2 border-r border-slate-200">
+          <span id="labelPageType" class="font-bold text-indigo-700">A4 แนวตั้ง</span>
+          <span id="labelScaleIndicator" class="text-slate-400 text-[10px]">100%</span>
+        </div>
+
+        <!-- Zoom Controls -->
+        <div class="flex items-center gap-1">
+          <button id="btnZoomOut" class="p-1 hover:bg-slate-100 rounded text-slate-600" title="ซูมออก">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path></svg>
+          </button>
+          <button id="btnZoomReset" class="px-1.5 py-0.5 hover:bg-slate-100 rounded text-slate-600 font-mono text-[11px]" title="พอดีหน้าจอ">พอดี</button>
+          <button id="btnZoomIn" class="p-1 hover:bg-slate-100 rounded text-slate-600" title="ซูมเข้า">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+          </button>
+        </div>
+
+        <div class="h-3.5 w-px bg-slate-200 mx-1"></div>
+
+        <!-- Guides & Grid Toggles -->
+        <label class="flex items-center gap-1 cursor-pointer hover:text-indigo-600" title="แสดงเส้นขอบปลอดภัยสำหรับงานพิมพ์">
+          <input type="checkbox" id="toggleSafeArea" checked class="rounded text-indigo-600 focus:ring-0 w-3 h-3">
+          <span>เส้นขอบ</span>
+        </label>
+        <label class="flex items-center gap-1 cursor-pointer hover:text-indigo-600" title="แสดงเส้นตารางช่วยกะระยะ">
+          <input type="checkbox" id="toggleGrid" class="rounded text-indigo-600 focus:ring-0 w-3 h-3">
+          <span>ตาราง</span>
+        </label>
+        <label class="flex items-center gap-1 cursor-pointer hover:text-indigo-600" title="แสดงรูปจางๆ บอกใบ้">
+          <input type="checkbox" id="toggleSilhouette" checked class="rounded text-indigo-600 focus:ring-0 w-3 h-3">
+          <span>รูปใบ้</span>
+        </label>
+        <button id="btnCenterObject" class="px-2 py-0.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded transition" title="จัดกึ่งกลางภาพ">
+          จัดกึ่งกลาง
+        </button>
+      </div>
+
+      <div class="my-auto py-6 flex justify-center items-center">
+        <div id="paperWrapper" class="sheet-paper relative rounded-sm bg-white overflow-hidden transition-all duration-150 border border-slate-300">
+          
+          <!-- MAIN SVG CANVAS (794 x 1123 for A4 standard ratio) -->
+          <svg id="worksheetSVG" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 794 1123" class="w-full h-full block">
+            <defs>
+              <!-- Grid Pattern -->
+              <pattern id="canvasGrid" width="20" height="20" patternUnits="userSpaceOnUse">
+                <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#e2e8f0" stroke-width="0.75" />
+              </pattern>
+              <!-- Star Marker for END Point -->
+              <marker id="starMarker" viewBox="0 0 20 20" refX="10" refY="10" markerWidth="8" markerHeight="8">
+                <polygon points="10,1 12.8,7 19.5,7.4 14.4,11.8 16,18.4 10,14.8 4,18.4 5.6,11.8 0.5,7.4 7.2,7" fill="#f59e0b" />
+              </marker>
+            </defs>
+
+            <!-- Grid Layer -->
+            <rect id="svgGridLayer" width="100%" height="100%" fill="url(#canvasGrid)" class="hidden" />
+
+            <!-- Safe Printable Margin Border (40px padding ~ 10mm margin) -->
+            <rect id="svgSafeMargin" x="40" y="40" width="714" height="1043" fill="none" class="safe-guide" />
+
+            <!-- Decorative Border (optional) -->
+            <rect id="svgBorder" x="30" y="30" width="734" height="1063" fill="none" stroke="#1e293b" stroke-width="2" rx="4" />
+
+            <!-- ================= HEADER SECTION ================= -->
+            <g id="svgHeaderGroup">
+              <!-- Worksheet Title -->
+              <text id="svgTitle" x="397" y="90" text-anchor="middle" font-family="Sarabun, Inter" font-size="28" font-weight="700" fill="#0f172a">
+                ใบงานลากเส้นเชื่อมจุดแสนสนุก
+              </text>
+              <!-- Worksheet Instructions -->
+              <text id="svgInstructions" x="397" y="122" text-anchor="middle" font-family="Sarabun, Inter" font-size="14" fill="#475569">
+                ลากเส้นเชื่อมจุดตามลำดับตัวเลข แล้วระบายสีภาพให้สวยงาม
+              </text>
+
+              <!-- Student Header Box -->
+              <g id="svgStudentInfoBox" transform="translate(45, 140)">
+                <!-- Name -->
+                <text x="0" y="16" font-family="Sarabun" font-size="13" font-weight="600" fill="#334155">ชื่อ-สกุล:</text>
+                <line x1="60" y1="18" x2="310" y2="18" stroke="#94a3b8" stroke-dasharray="2 2" stroke-width="1.2" />
+                <!-- Class -->
+                <text x="325" y="16" font-family="Sarabun" font-size="13" font-weight="600" fill="#334155">ชั้น:</text>
+                <line x1="355" y1="18" x2="450" y2="18" stroke="#94a3b8" stroke-dasharray="2 2" stroke-width="1.2" />
+                <!-- Date -->
+                <text x="465" y="16" font-family="Sarabun" font-size="13" font-weight="600" fill="#334155">วันที่:</text>
+                <line x1="505" y1="18" x2="595" y2="18" stroke="#94a3b8" stroke-dasharray="2 2" stroke-width="1.2" />
+                <!-- Score -->
+                <text x="610" y="16" font-family="Sarabun" font-size="13" font-weight="600" fill="#334155">คะแนน:</text>
+                <rect x="655" y="-2" width="48" height="24" rx="4" fill="none" stroke="#cbd5e1" stroke-width="1" />
+              </g>
+            </g>
+
+            <!-- ================= DRAWING / OBJECT LAYER ================= -->
+            <!-- Group that can be scaled, rotated, or moved -->
+            <g id="svgInteractiveLayer" transform="translate(0, 0)">
+              <!-- Uploaded custom reference image (tracer) -->
+              <image id="svgTracerImage" x="0" y="0" width="0" height="0" preserveAspectRatio="xMidYMid meet" opacity="0.4" class="pointer-events-none" />
+
+              <!-- Silhouette hint outline -->
+              <path id="svgSilhouettePath" d="" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.35" class="pointer-events-none" />
+
+              <!-- Connecting Line Path (Drawn in Answer Key or guide mode) -->
+              <path id="svgConnectingLine" d="" fill="none" stroke="#4f46e5" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
+
+              <!-- Dynamic Dots and Labels Group -->
+              <g id="svgDotsGroup"></g>
+              <g id="svgLabelsGroup"></g>
+            </g>
+
+            <!-- ================= FOOTER / WATERMARK SECTION ================= -->
+            <g id="svgFooterGroup" transform="translate(45, 1085)">
+              <text id="svgFooterCredit" x="0" y="0" font-family="Sarabun" font-size="10" fill="#94a3b8">
+                Concept, Design &amp; Development by Yimwhan Film
+              </text>
+              <text id="svgPageNumber" x="704" y="0" text-anchor="end" font-family="Sarabun" font-size="10" fill="#94a3b8">
+                หน้า 1/1
+              </text>
+            </g>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Image Transformer & Tracing Floating Toolbar (Shows when custom image exists) -->
+      <div id="imageControlToolbar" class="hidden absolute bottom-8 z-30 bg-white/95 backdrop-blur shadow-xl border border-slate-300 rounded-2xl px-4 py-2.5 flex items-center gap-4 text-xs text-slate-700">
+        <div class="flex items-center gap-2 border-r border-slate-200 pr-3 font-semibold text-indigo-700">
+          <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+          <span>ปรับรูปภาพต้นแบบ:</span>
+        </div>
+
+        <!-- Scale slider -->
+        <div class="flex items-center gap-2">
+          <span class="text-slate-500">ขยายรูป:</span>
+          <input type="range" id="rngImageScale" min="30" max="250" value="100" class="w-24 accent-indigo-600 cursor-pointer">
+          <span id="lblImageScale" class="w-10 font-mono font-semibold">100%</span>
+        </div>
+
+        <!-- Opacity slider -->
+        <div class="flex items-center gap-2 border-l border-slate-200 pl-3">
+          <span class="text-slate-500">ความโปร่งแสง:</span>
+          <input type="range" id="rngImageOpacity" min="10" max="100" value="40" class="w-20 accent-indigo-600 cursor-pointer">
+          <span id="lblImageOpacity" class="w-8 font-mono font-semibold">40%</span>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex items-center gap-1.5 border-l border-slate-200 pl-3">
+          <button onclick="centerTracerImage()" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded text-slate-700 font-medium transition" title="จัดกึ่งกลางรูป">
+            กึ่งกลางรูป
+          </button>
+          <button onclick="clearTracerImage()" class="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded font-medium transition" title="ลบภาพต้นแบบ">
+            ลบรูปภาพ
+          </button>
+        </div>
+      </div>
+
+      <div class="w-full flex justify-between items-center text-[11px] text-slate-500 pt-1">
+        <div>
+          <span>โหมดปัจจุบัน: </span>
+          <span id="lblCurrentMode" class="font-semibold text-slate-700">ลากจุดตามตัวเลข (1-10)</span>
+          <span class="mx-2">•</span>
+          <span>จำนวนจุด: </span>
+          <span id="lblPointCount" class="font-semibold text-indigo-600">10 จุด</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <span id="traceStatusHelp" class="hidden text-amber-700 bg-amber-100 px-2 py-0.5 rounded font-medium">💡 คลิกบนกระดาษเพื่อเพิ่มจุดใหม่ | ดึงจุดเพื่อย้าย</span>
+          <span class="text-slate-400">Concept, Design &amp; Development by Yimwhan Film</span>
+        </div>
+      </div>
+    </main>
+
+    <!-- ==================== RIGHT SIDEBAR: SETTINGS PANEL ==================== -->
+    <aside id="rightSidebar" class="w-84 bg-white border-l border-slate-200 flex flex-col shrink-0 z-10 overflow-hidden" style="width: 340px;">
+      
+      <div class="flex border-b border-slate-200 bg-slate-50 text-xs font-semibold overflow-x-auto text-slate-600 shrink-0">
+        <button onclick="switchTab('tabActivity')" id="tabBtn_tabActivity" class="px-3 py-2.5 border-b-2 border-indigo-600 text-indigo-600 bg-white transition whitespace-nowrap">
+          🔢 ลำดับ/โจทย์
+        </button>
+        <button onclick="switchTab('tabStyle')" id="tabBtn_tabStyle" class="px-3 py-2.5 border-b-2 border-transparent hover:text-indigo-600 transition whitespace-nowrap">
+          🎨 จุดและเส้น
+        </button>
+        <button onclick="switchTab('tabHeader')" id="tabBtn_tabHeader" class="px-3 py-2.5 border-b-2 border-transparent hover:text-indigo-600 transition whitespace-nowrap">
+          📝 ข้อมูลหัวกระดาษ
+        </button>
+        <button onclick="switchTab('tabPage')" id="tabBtn_tabPage" class="px-3 py-2.5 border-b-2 border-transparent hover:text-indigo-600 transition whitespace-nowrap">
+          📄 ขนาดหน้า
+        </button>
+      </div>
+
+      <!-- Tab Content Area -->
+      <div class="flex-1 overflow-y-auto p-4 space-y-4 text-xs">
+
+        <!-- ================= TAB 1: ACTIVITY & SEQUENCE ================= -->
+        <div id="tabActivity" class="space-y-4">
+          <!-- Activity Type Selection -->
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1.5">ประเภทกิจกรรม</label>
+            <select id="selActivityType" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-indigo-500 font-medium">
+              <option value="number_sequence">ตัวเลขเรียงลำดับ (Sequential Numbers)</option>
+              <option value="skip_counting">การนับก้าวกระโดด (Skip Counting 2, 3, 5, 10)</option>
+              <option value="backward_counting">นับถอยหลัง (Count Backwards)</option>
+              <option value="math_equation">โจทย์คณิตศาสตร์ (Math Equation Mode)</option>
+              <option value="alphabet_upper">ตัวอักษรภาษาอังกฤษ พิมพ์ใหญ่ (A–Z)</option>
+              <option value="alphabet_lower">ตัวอักษรภาษาอังกฤษ พิมพ์เล็ก (a–z)</option>
+              <option value="custom_sequence">กำหนดรายการลำดับเอง (Custom Sequence)</option>
+            </select>
+          </div>
+
+          <!-- Dynamic Controls based on activity -->
+          <div id="boxActivitySettings" class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+            <!-- Numerical Sequence Controls -->
+            <div id="rowRangeSettings" class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-slate-500 text-[11px] mb-1">เลขเริ่มต้น</label>
+                <input type="number" id="inpStartNumber" value="1" min="0" max="999" class="w-full bg-white border border-slate-300 rounded-lg px-2 py-1.5 text-xs font-semibold">
+              </div>
+              <div id="colSkipStep" class="hidden">
+                <label class="block text-slate-500 text-[11px] mb-1">นับเพิ่มทีละ (Step)</label>
+                <select id="selSkipStep" class="w-full bg-white border border-slate-300 rounded-lg px-2 py-1.5 text-xs font-semibold">
+                  <option value="2">ทีละ 2 (+2)</option>
+                  <option value="3">ทีละ 3 (+3)</option>
+                  <option value="5" selected>ทีละ 5 (+5)</option>
+                  <option value="10">ทีละ 10 (+10)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Math Mode Settings -->
+            <div id="rowMathSettings" class="hidden space-y-2">
+              <label class="block text-slate-700 text-[11px] font-semibold">รูปแบบโจทย์คณิตศาสตร์ที่จุด</label>
+              <div class="grid grid-cols-2 gap-2">
+                <select id="selMathOp" class="bg-white border border-slate-300 rounded-lg p-1.5 text-xs font-medium">
+                  <option value="add">การบวกเท่านั้น (+)</option>
+                  <option value="sub">การลบเท่านั้น (-)</option>
+                  <option value="mixed">บวกและลบคละกัน</option>
+                </select>
+                <select id="selMathMax" class="bg-white border border-slate-300 rounded-lg p-1.5 text-xs font-medium">
+                  <option value="10">ผลลัพธ์ไม่เกิน 10</option>
+                  <option value="20" selected>ผลลัพธ์ไม่เกิน 20</option>
+                  <option value="50">ผลลัพธ์ไม่เกิน 50</option>
+                  <option value="100">ผลลัพธ์ไม่เกิน 100</option>
+                </select>
+              </div>
+              <p class="text-[10px] text-slate-500 leading-tight">ตัวอย่าง: จุดที่ 5 อาจแสดงเป็น "3+2" เพื่อให้ผู้เรียนคิดเลขก่อนลากเส้นเชื่อม</p>
+            </div>
+
+            <!-- Custom Sequence Textarea -->
+            <div id="rowCustomList" class="hidden space-y-1">
+              <label class="block text-slate-500 text-[11px]">รายการข้อความคั่นด้วยจุลภาค (,)</label>
+              <textarea id="txtCustomSequence" rows="3" placeholder="จันทร์, อังคาร, พุธ, พฤหัส, ศุกร์, เสาร์, อาทิตย์" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-mono"></textarea>
+            </div>
+
+            <!-- Re-generate labels button -->
+            <div class="pt-1">
+              <button id="btnRegenerateLabels" class="w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold py-1.5 px-3 rounded-lg border border-indigo-200 transition flex items-center justify-center gap-1.5">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                <span>สร้างหมายเลขใหม่ / สุ่มโจทย์ใหม่</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Difficulty Presets -->
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1.5">ระดับความยากและจำนวนจุด</label>
+            <div class="grid grid-cols-3 gap-1.5 mb-2">
+              <button type="button" onclick="applyDifficulty('easy')" class="p-2 border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-lg text-center transition">
+                <div class="font-bold text-[11px]">ง่าย (Easy)</div>
+                <div class="text-[10px] text-emerald-600">10-20 จุด</div>
+              </button>
+              <button type="button" onclick="applyDifficulty('medium')" class="p-2 border border-sky-300 bg-sky-50 hover:bg-sky-100 text-sky-800 rounded-lg text-center transition">
+                <div class="font-bold text-[11px]">ปานกลาง</div>
+                <div class="text-[10px] text-sky-600">21-40 จุด</div>
+              </button>
+              <button type="button" onclick="applyDifficulty('hard')" class="p-2 border border-rose-300 bg-rose-50 hover:bg-rose-100 text-rose-800 rounded-lg text-center transition">
+                <div class="font-bold text-[11px]">ท้าทาย (Hard)</div>
+                <div class="text-[10px] text-rose-600">41-80 จุด</div>
+              </button>
+            </div>
+            
+            <div class="flex items-center justify-between text-[11px] text-slate-500">
+              <span>ปรับจำนวนจุดเอง:</span>
+              <span id="valPointDensity" class="font-bold text-slate-700">18 จุด</span>
+            </div>
+            <input type="range" id="rngPointDensity" min="6" max="80" value="18" class="w-full accent-indigo-600">
+          </div>
+
+          <!-- Connect end to start checkbox -->
+          <div class="pt-2 border-t border-slate-200">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="chkCloseLoop" checked class="rounded text-indigo-600 focus:ring-0">
+              <span class="font-medium text-slate-700">ลากเส้นจุดสุดท้ายกลับมาจุดแรก (Close loop)</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- ================= TAB 2: DOTS & STYLING ================= -->
+        <div id="tabStyle" class="hidden space-y-4">
+          <!-- Dots settings -->
+          <div class="space-y-3">
+            <h4 class="font-semibold text-slate-800 text-xs border-b pb-1">ลักษณะของจุด (Dots)</h4>
+            
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-slate-500 text-[11px] mb-1">ขนาดจุด (Radius)</label>
+                <div class="flex items-center gap-2">
+                  <input type="range" id="rngDotRadius" min="2" max="10" value="4.5" step="0.5" class="w-full accent-indigo-600">
+                  <span id="lblDotRadius" class="text-[11px] font-semibold w-6">4.5</span>
+                </div>
+              </div>
+              <div>
+                <label class="block text-slate-500 text-[11px] mb-1">สีของจุด</label>
+                <div class="flex items-center gap-2">
+                  <input type="color" id="clrDotColor" value="#0f172a" class="w-7 h-7 p-0 border-0 rounded cursor-pointer">
+                  <span id="valDotColor" class="text-[11px] font-mono text-slate-500">#0f172a</span>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-slate-500 text-[11px] mb-1">รูปแบบจุด</label>
+              <select id="selDotShape" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-1.5 text-xs">
+                <option value="solid">วงกลมทึบ (Solid Circle)</option>
+                <option value="hollow">วงกลมโปร่ง (Hollow Ring)</option>
+                <option value="none">ไม่แสดงจุด (เฉพาะตัวเลข)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Numbers / Label settings -->
+          <div class="space-y-3 pt-2 border-t border-slate-200">
+            <h4 class="font-semibold text-slate-800 text-xs border-b pb-1">ลักษณะตัวเลข / ข้อความ</h4>
+
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-slate-500 text-[11px] mb-1">ขนาดตัวเลข</label>
+                <div class="flex items-center gap-2">
+                  <input type="range" id="rngFontSize" min="8" max="24" value="13" class="w-full accent-indigo-600">
+                  <span id="lblFontSize" class="text-[11px] font-semibold w-6">13</span>
+                </div>
+              </div>
+              <div>
+                <label class="block text-slate-500 text-[11px] mb-1">สีตัวเลข</label>
+                <div class="flex items-center gap-2">
+                  <input type="color" id="clrFontColor" value="#1e293b" class="w-7 h-7 p-0 border-0 rounded cursor-pointer">
+                  <span id="valFontColor" class="text-[11px] font-mono text-slate-500">#1e293b</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-slate-500 text-[11px] mb-1">แบบอักษร (Font)</label>
+                <select id="selFontFamily" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-1.5 text-xs">
+                  <option value="Sarabun">Sarabun (สารบรรณ)</option>
+                  <option value="Noto Sans Thai">Noto Sans Thai</option>
+                  <option value="Chakra Petch">Chakra Petch</option>
+                  <option value="Inter">Inter (English)</option>
+                  <option value="Arial">Arial</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-slate-500 text-[11px] mb-1">ตำแหน่งตัวเลข</label>
+                <select id="selLabelPosition" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-1.5 text-xs">
+                  <option value="auto">คำนวณอัตโนมัติ (ไม่ทับ)</option>
+                  <option value="top">ด้านบนของจุด</option>
+                  <option value="right">ด้านขวาของจุด</option>
+                  <option value="bottom">ด้านล่างของจุด</option>
+                  <option value="left">ด้านซ้ายของจุด</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Start & End Highlights -->
+            <div class="space-y-1.5 pt-1">
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" id="chkHighlightStart" checked class="rounded text-indigo-600 focus:ring-0">
+                <span class="text-slate-700">เน้นจุดเริ่มต้นด้วยป้าย "START" หรือสีพิเศษ</span>
+              </label>
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" id="chkHighlightEnd" checked class="rounded text-indigo-600 focus:ring-0">
+                <span class="text-slate-700">เน้นจุดสิ้นสุดด้วยดาว ⭐ "END"</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Guide / Silhouette line -->
+          <div class="space-y-3 pt-2 border-t border-slate-200">
+            <h4 class="font-semibold text-slate-800 text-xs border-b pb-1">เส้นภาพใบ้และเฉลย</h4>
+
+            <div>
+              <div class="flex justify-between text-slate-500 text-[11px] mb-1">
+                <span>ความโปร่งใสของภาพโครงใบ้ (Hint Line)</span>
+                <span id="lblSilhouetteOpacity">35%</span>
+              </div>
+              <input type="range" id="rngSilhouetteOpacity" min="0" max="100" value="35" class="w-full accent-indigo-600">
+            </div>
+
+            <div>
+              <label class="block text-slate-500 text-[11px] mb-1">รูปแบบเส้นเฉลย (Answer Line)</label>
+              <div class="grid grid-cols-2 gap-2">
+                <select id="selAnswerLineStyle" class="bg-slate-50 border border-slate-300 rounded-lg p-1.5 text-xs">
+                  <option value="solid">เส้นทึบ (Solid)</option>
+                  <option value="dashed">เส้นประ (Dashed)</option>
+                  <option value="dotted">จุดไข่ปลา (Dotted)</option>
+                </select>
+                <div class="flex items-center gap-2">
+                  <input type="color" id="clrAnswerLine" value="#4f46e5" class="w-7 h-7 p-0 border-0 rounded cursor-pointer">
+                  <span class="text-[11px] text-slate-500">สีเส้น</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= TAB 3: HEADER & TEXTS ================= -->
+        <div id="tabHeader" class="hidden space-y-4">
+          <!-- Title & Subtitle -->
+          <div class="space-y-3">
+            <div>
+              <label class="block text-slate-700 font-semibold mb-1">ชื่อหัวข้อใบงาน</label>
+              <input type="text" id="inpWorksheetTitle" value="ใบงานลากเส้นเชื่อมจุดแสนสนุก" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs font-semibold">
+            </div>
+
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <label class="block text-slate-700 font-semibold">คำชี้แจง / Instruction</label>
+                <div class="flex gap-1 text-[10px]">
+                  <button type="button" onclick="setInstructionPreset('th')" class="text-indigo-600 hover:underline">ไทย</button>
+                  <span class="text-slate-300">|</span>
+                  <button type="button" onclick="setInstructionPreset('en')" class="text-indigo-600 hover:underline">EN</button>
+                </div>
+              </div>
+              <textarea id="inpWorksheetInstructions" rows="2" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs">ลากเส้นเชื่อมจุดตามลำดับตัวเลข แล้วระบายสีภาพให้สวยงาม</textarea>
+            </div>
+          </div>
+
+          <!-- Student Information Fields Visibility -->
+          <div class="space-y-2 pt-2 border-t border-slate-200">
+            <span class="font-semibold text-slate-700 block">แถบข้อมูลผู้เรียน</span>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="chkShowStudentHeader" checked class="rounded text-indigo-600 focus:ring-0">
+              <span>แสดงช่อง ชื่อ / วันที่ / ชั้น / คะแนน</span>
+            </label>
+          </div>
+
+          <!-- Branding & Footer -->
+          <div class="space-y-3 pt-2 border-t border-slate-200">
+            <span class="font-semibold text-slate-700 block">ท้ายกระดาษและลิขสิทธิ์</span>
+            <div>
+              <label class="block text-slate-500 text-[11px] mb-1">ข้อความเครดิต / ลิขสิทธิ์</label>
+              <input type="text" id="inpFooterCredit" value="Concept, Design & Development by Yimwhan Film" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-1.5 text-xs font-medium">
+            </div>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="chkShowPageNumber" checked class="rounded text-indigo-600 focus:ring-0">
+              <span>แสดงหมายเลขหน้า (Page 1/1)</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="chkShowBorder" checked class="rounded text-indigo-600 focus:ring-0">
+              <span>แสดงกรอบตกแต่งรอบกระดาษ</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- ================= TAB 4: PAGE & ORIENTATION ================= -->
+        <div id="tabPage" class="hidden space-y-4">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1.5">ขนาดกระดาษ</label>
+            <div class="grid grid-cols-2 gap-2">
+              <button type="button" onclick="setPageFormat('a4')" id="btnFormatA4" class="p-2 border-2 border-indigo-600 bg-indigo-50 text-indigo-700 rounded-lg font-bold text-center">
+                A4 (210 × 297 มม.)
+              </button>
+              <button type="button" onclick="setPageFormat('letter')" id="btnFormatLetter" class="p-2 border border-slate-200 hover:border-slate-300 text-slate-700 rounded-lg font-medium text-center">
+                US Letter (8.5 × 11")
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1.5">ทิศทางกระดาษ</label>
+            <div class="grid grid-cols-2 gap-2">
+              <button type="button" onclick="setOrientation('portrait')" id="btnOriPortrait" class="p-2 border-2 border-indigo-600 bg-indigo-50 text-indigo-700 rounded-lg font-bold text-center flex items-center justify-center gap-1.5">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect width="14" height="18" x="5" y="3" rx="1" stroke-width="2"></rect></svg>
+                <span>แนวตั้ง (Portrait)</span>
+              </button>
+              <button type="button" onclick="setOrientation('landscape')" id="btnOriLandscape" class="p-2 border border-slate-200 hover:border-slate-300 text-slate-700 rounded-lg font-medium text-center flex items-center justify-center gap-1.5">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect width="18" height="14" x="3" y="5" rx="1" stroke-width="2"></rect></svg>
+                <span>แนวนอน (Landscape)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Printable Margin -->
+          <div class="pt-2 border-t border-slate-200">
+            <label class="block font-semibold text-slate-700 mb-1">ระยะขอบปลอดภัยการพิมพ์ (Margin)</label>
+            <select id="selPageMargin" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs font-medium">
+              <option value="30">แคบ (Narrow - 8mm)</option>
+              <option value="40" selected>ปกติ (Normal - 12mm)</option>
+              <option value="55">กว้าง (Wide - 18mm สำหรับเย็บเล่ม)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom helper bar for selected dot -->
+      <div id="dotEditTools" class="p-3 bg-slate-50 border-t border-slate-200 text-xs flex items-center justify-between">
+        <div class="text-slate-600">
+          <span id="lblSelectedDotInfo">คลิกเลือกจุดบนกระดาษเพื่อขยับ/ลบ</span>
+        </div>
+        <div class="flex items-center gap-1">
+          <button id="btnInsertDot" class="px-2 py-1 bg-white hover:bg-slate-100 text-indigo-700 border border-indigo-200 rounded font-medium shadow-sm transition disabled:opacity-40" disabled title="แทรกจุดใหม่หลังจุดนี้">
+            + แทรกจุด
+          </button>
+          <button id="btnDeleteDot" class="px-2 py-1 bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 rounded font-medium shadow-sm transition disabled:opacity-40" disabled title="ลบจุดที่เลือก">
+            ลบจุด
+          </button>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- ================= MODALS & DIALOGS (Zero Browser Alert) ================= -->
+  
+  <!-- 1. PROJECT MANAGEMENT MODAL -->
+  <div id="projectModal" class="hidden fixed inset-0 z-50 flex items-center justify-center modal-backdrop p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] flex flex-col">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 class="font-bold text-lg text-slate-800">จัดการโปรเจกต์ (Projects)</h3>
+        <button onclick="closeModal('projectModal')" class="text-slate-400 hover:text-slate-600">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">ชื่อโปรเจกต์ปัจจุบัน</label>
+          <div class="flex gap-2">
+            <input type="text" id="inpProjectName" value="แบบฝึกหัดสัตว์น่ารักชุดที่ 1" class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500">
+            <button onclick="saveCurrentProject()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded-lg text-sm transition">
+              บันทึก
+            </button>
+          </div>
+        </div>
+
+        <div class="flex gap-2 pt-2">
+          <button onclick="exportProjectJSON()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-2 rounded-lg text-xs transition border border-slate-200">
+            💾 ส่งออกเป็นไฟล์ JSON
+          </button>
+          <label class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-2 rounded-lg text-xs transition border border-slate-200 text-center cursor-pointer">
+            <span>📂 นำเข้าไฟล์ JSON</span>
+            <input type="file" id="inpImportJSON" accept=".json" class="hidden" onchange="importProjectJSON(event)">
+          </label>
+        </div>
+
+        <div>
+          <h4 class="text-xs font-bold text-slate-700 mb-2">โปรเจกต์ที่บันทึกไว้ในเครื่อง</h4>
+          <div id="savedProjectsList" class="space-y-2 max-h-48 overflow-y-auto pr-1 text-xs">
+            <!-- Populated via storage.js logic -->
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-3 border-t flex justify-end">
+        <button onclick="closeModal('projectModal')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium">
+          ปิดหน้าต่าง
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. BATCH GENERATOR MODAL -->
+  <div id="batchModal" class="hidden fixed inset-0 z-50 flex items-center justify-center modal-backdrop p-4">
+    <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-4 max-h-[92vh] flex flex-col">
+      <div class="flex justify-between items-center border-b pb-3">
+        <div>
+          <h3 class="font-bold text-lg text-slate-800">เครื่องมือสร้างชุดใบงานหลายหน้า (Batch Generator)</h3>
+          <p class="text-xs text-slate-500">เลือกภาพเพื่อนำมาผสานรวมเป็นสมุดใบงานเล่มเดียว พร้อมเฉลยท้ายเล่ม</p>
+        </div>
+        <button onclick="closeModal('batchModal')" class="text-slate-400 hover:text-slate-600">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto space-y-4 pr-1">
+        <div>
+          <span class="text-xs font-bold text-slate-700 block mb-2">1. ติ๊กเลือกภาพที่ต้องการนำเข้าชุด:</span>
+          <div id="batchTemplateSelector" class="grid grid-cols-4 gap-2.5 max-h-56 overflow-y-auto p-1">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2 text-xs">
+          <span class="font-bold text-slate-700 block">2. ตัวเลือกการรวมเอกสาร:</span>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" id="chkBatchIncludeAnswers" checked class="rounded text-indigo-600">
+            <span>สร้างหน้าเฉลย (Answer Keys) รวมไว้ตอนท้ายเล่มอัตโนมัติ</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" id="chkBatchDynamicNumbers" checked class="rounded text-indigo-600">
+            <span>สุ่มลำดับตัวเลขและระดับความยากตามการตั้งค่าปัจจุบัน</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="pt-3 border-t flex justify-between items-center">
+        <span id="batchCountBadge" class="text-xs text-indigo-600 font-semibold">เลือกแล้ว 0 หน้า</span>
+        <div class="flex gap-2">
+          <button onclick="closeModal('batchModal')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium">ยกเลิก</button>
+          <button onclick="generateBatchPDF()" id="btnGenerateBatchPDF" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold shadow-md flex items-center gap-1.5">
+            <span>🚀 สร้างและดาวน์โหลดเล่ม PDF</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. CONFIRMATION MODAL -->
+  <div id="confirmModal" class="hidden fixed inset-0 z-50 flex items-center justify-center modal-backdrop p-4">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl space-y-3">
+      <h3 id="confirmModalTitle" class="font-bold text-base text-slate-800">ยืนยันการทำรายการ</h3>
+      <p id="confirmModalMessage" class="text-xs text-slate-600 leading-relaxed">คุณแน่ใจหรือไม่ที่จะดำเนินการนี้?</p>
+      <div class="flex justify-end gap-2 pt-2">
+        <button id="btnConfirmCancel" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium">ยกเลิก</button>
+        <button id="btnConfirmOk" class="px-4 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-semibold">ยืนยัน</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. TOAST NOTIFICATION CONTAINER -->
+  <div id="toastContainer" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- 5. PROGRESS / LOADING OVERLAY -->
+  <div id="loadingOverlay" class="hidden fixed inset-0 z-50 flex flex-col items-center justify-center modal-backdrop text-white space-y-3">
+    <div class="w-12 h-12 border-4 border-indigo-400 border-t-transparent rounded-full animate-spin"></div>
+    <div id="loadingText" class="text-sm font-semibold tracking-wide">กำลังสร้างไฟล์เอกสารความละเอียดสูง...</div>
+  </div>
+
+  <script>
+    /* ==========================================================================
+       DOT MATH WORKSHEET GENERATOR - CORE SCRIPT
+       Concept, Design & Development by Yimwhan Film
+       ========================================================================== */
+
+    // System Credits Configuration
+    const APP_CONFIG = {
+      name: "Dot Math Worksheet Generator",
+      version: "1.2 Pro",
+      authorCredit: "Concept, Design & Development by Yimwhan Film",
+      defaultStorageKey: "dot_math_worksheets_data_v1"
+    };
+
+    // Global State Container
+    const state = {
+      // Document Layout
+      pageFormat: 'a4',       // 'a4' or 'letter'
+      orientation: 'portrait',// 'portrait' or 'landscape'
+      margin: 40,
+      zoom: 1.0,
+      showGrid: false,
+      showSafeArea: true,
+      showSilhouette: true,
+      viewMode: 'question',   // 'question' or 'answer'
+      traceMode: false,
+
+      // Worksheet Header Info
+      title: "ใบงานลากเส้นเชื่อมจุดแสนสนุก",
+      instruction: "ลากเส้นเชื่อมจุดตามลำดับตัวเลข แล้วระบายสีภาพให้สวยงาม",
+      showStudentHeader: true,
+      showFooterCredit: true,
+      showPageNumber: true,
+      showBorder: true,
+      footerCredit: APP_CONFIG.authorCredit,
+
+      // Activity & Math Mode
+      activityType: 'number_sequence', // 'number_sequence', 'skip_counting', 'backward_counting', 'math_equation', 'alphabet_upper', 'alphabet_lower', 'custom_sequence'
+      startNumber: 1,
+      skipStep: 5,
+      mathOp: 'add',
+      mathMax: 20,
+      customSequence: ["จันทร์", "อังคาร", "พุธ", "พฤหัส", "ศุกร์", "เสาร์", "อาทิตย์"],
+      closeLoop: true,
+
+      // Styling
+      dotRadius: 4.5,
+      dotColor: "#0f172a",
+      dotShape: "solid",      // 'solid', 'hollow', 'none'
+      fontSize: 13,
+      fontColor: "#1e293b",
+      fontFamily: "Sarabun",
+      labelPosition: "auto",  // 'auto', 'top', 'right', 'bottom', 'left'
+      highlightStart: true,
+      highlightEnd: true,
+      silhouetteOpacity: 0.35,
+      answerLineStyle: 'solid',
+      answerLineColor: '#4f46e5',
+      answerLineWidth: 2.2,
+
+      // Current Template & Points
+      currentTemplateId: 'cat',
+      customTracerImgUrl: null,
+      tracerTransform: {
+        scale: 1.0,
+        opacity: 0.4,
+        x: 0,
+        y: 0,
+        baseW: 550,
+        baseH: 650
+      },
+      points: [],             // Array of { x, y, label, equation }
+      selectedPointIndex: -1,
+      objectTransform: { x: 0, y: 0, scale: 1.0 },
+
+      // History Stack for Undo / Redo
+      history: [],
+      historyIndex: -1
+    };
+
+    // High Quality Vector Public-Domain Curated Shapes
+    const BUILTIN_TEMPLATES = [
+      {
+        id: 'blank',
+        title: 'หน้าเปล่า (สร้าง/วาดเอง)',
+        category: 'custom',
+        difficulty: 'easy',
+        recommendedAge: 'ทุกช่วงวัย',
+        rawPath: '',
+        previewSvg: `<rect x="25" y="20" width="50" height="60" rx="4" fill="none" stroke="#6366f1" stroke-dasharray="4 3" stroke-width="2"/><path d="M 50 40 L 50 60 M 40 50 L 60 50" stroke="#6366f1" stroke-width="2.5" stroke-linecap="round"/>`
+      },
+      {
+        id: 'cat',
+        title: 'แมวน้อยแสนซน',
+        category: 'animals_land',
+        difficulty: 'easy',
+        recommendedAge: '4-6 ปี',
+        rawPath: "M 397 320 L 440 250 L 470 330 C 530 360 560 430 550 510 C 540 600 480 670 480 730 L 490 800 L 430 800 L 430 750 L 360 750 L 360 800 L 300 800 L 310 720 C 310 650 250 580 250 500 C 250 420 280 350 340 330 L 360 250 Z",
+        previewSvg: `<path d="M 50 35 L 60 20 L 70 36 C 82 42 88 55 86 70 L 76 90 L 68 90 L 68 83 L 52 83 L 52 90 L 44 90 L 46 75 C 38 65 38 50 44 40 L 47 22 Z" fill="none" stroke="#4f46e5" stroke-width="3"/>`
+      },
+      {
+        id: 'elephant',
+        title: 'ช้างใจดี',
+        category: 'animals_land',
+        difficulty: 'medium',
+        recommendedAge: '6-8 ปี',
+        rawPath: "M 250 650 L 250 520 C 250 420 320 350 420 350 C 510 350 580 400 600 480 C 630 490 660 520 660 570 C 660 610 640 640 600 650 L 600 750 L 530 750 L 530 680 L 470 680 L 470 750 L 400 750 L 400 660 C 360 660 340 700 320 740 C 300 780 270 790 250 780 C 240 770 240 740 260 710 C 270 690 280 670 280 650 Z",
+        previewSvg: `<circle cx="45" cy="50" r="28" fill="none" stroke="#4f46e5" stroke-width="3"/><rect x="25" y="60" width="12" height="25" rx="4" fill="none" stroke="#4f46e5" stroke-width="2"/><rect x="55" y="60" width="12" height="25" rx="4" fill="none" stroke="#4f46e5" stroke-width="2"/>`
+      },
+      {
+        id: 'dolphin',
+        title: 'โลมานักกระโดด',
+        category: 'animals_sea',
+        difficulty: 'medium',
+        recommendedAge: '6-9 ปี',
+        rawPath: "M 220 600 C 260 510 350 420 450 400 C 520 380 570 410 610 470 C 640 520 620 570 560 590 C 500 610 420 630 360 680 L 310 740 L 300 690 L 240 710 C 250 670 270 650 250 630 Z",
+        previewSvg: `<path d="M 20 65 C 35 40 65 35 85 50 C 75 65 55 70 45 75 L 30 85 Z" fill="none" stroke="#4f46e5" stroke-width="3"/>`
+      },
+      {
+        id: 'butterfly',
+        title: 'ผีเสื้อแสนสวย',
+        category: 'insects',
+        difficulty: 'medium',
+        recommendedAge: '5-7 ปี',
+        rawPath: "M 397 400 C 430 330 520 310 570 360 C 610 400 600 480 540 520 C 600 560 610 650 560 700 C 510 740 430 710 397 640 C 364 710 284 740 234 700 C 184 650 194 560 254 520 C 194 480 184 400 224 360 C 274 310 364 330 397 400 Z",
+        previewSvg: `<path d="M 50 45 C 65 25 85 35 80 55 C 75 68 55 70 50 85 C 45 70 25 68 20 55 C 15 35 35 25 50 45 Z" fill="none" stroke="#4f46e5" stroke-width="3"/>`
+      },
+      {
+        id: 'dinosaur',
+        title: 'ไดโนเสาร์บรอนโต',
+        category: 'dinosaurs',
+        difficulty: 'hard',
+        recommendedAge: '7-10 ปี',
+        rawPath: "M 230 720 L 230 600 C 230 530 300 480 380 480 C 430 480 450 450 460 380 C 470 320 490 280 540 280 C 570 280 590 300 590 330 C 590 360 560 390 530 410 C 500 430 490 480 500 540 C 540 540 600 570 650 630 L 680 720 L 620 720 L 600 660 L 520 660 L 510 720 L 440 720 L 440 660 L 350 660 L 340 720 Z",
+        previewSvg: `<path d="M 25 75 L 25 60 C 25 50 35 45 45 45 C 50 45 52 35 55 25 C 60 25 65 30 65 35 C 60 40 55 50 65 58 L 75 75 Z" fill="none" stroke="#4f46e5" stroke-width="3"/>`
+      },
+      {
+        id: 'rocket',
+        title: 'จรวดท่องอวกาศ',
+        category: 'vehicles',
+        difficulty: 'easy',
+        recommendedAge: '5-8 ปี',
+        rawPath: "M 397 260 C 440 340 460 440 460 550 L 510 630 L 460 630 L 450 680 L 397 660 L 344 680 L 334 630 L 284 630 L 334 550 C 334 440 354 340 397 260 Z",
+        previewSvg: `<path d="M 50 20 C 65 35 68 55 68 70 L 78 80 L 68 80 L 66 88 L 50 84 L 34 88 L 32 80 L 22 80 L 32 70 C 32 55 35 35 50 20 Z" fill="none" stroke="#4f46e5" stroke-width="3"/>`
+      },
+      {
+        id: 'apple',
+        title: 'แอปเปิลผลโต',
+        category: 'fruits',
+        difficulty: 'easy',
+        recommendedAge: '4-6 ปี',
+        rawPath: "M 397 380 C 420 330 470 330 510 360 C 560 400 580 480 560 560 C 540 650 460 720 397 720 C 334 720 254 650 234 560 C 214 480 234 400 284 360 C 324 330 374 330 397 380 Z",
+        previewSvg: `<circle cx="50" cy="55" r="28" fill="none" stroke="#4f46e5" stroke-width="3"/><path d="M 50 27 C 50 20 60 18 63 22" fill="none" stroke="#4f46e5" stroke-width="2"/>`
+      },
+      {
+        id: 'star',
+        title: 'ดวงดาวส่องแสง',
+        category: 'shapes',
+        difficulty: 'easy',
+        recommendedAge: '4-7 ปี',
+        rawPath: "M 397 260 L 440 390 L 575 390 L 465 470 L 508 600 L 397 520 L 286 600 L 329 470 L 219 390 L 354 390 Z",
+        previewSvg: `<polygon points="50,15 61,38 86,38 66,54 73,78 50,64 27,78 34,54 14,38 39,38" fill="none" stroke="#4f46e5" stroke-width="3"/>`
+      }
+    ];
+
+    const CATEGORIES = [
+      { id: 'all', name: 'ทั้งหมด' },
+      { id: 'animals_land', name: 'สัตว์บก' },
+      { id: 'animals_sea', name: 'สัตว์ทะเล' },
+      { id: 'insects', name: 'แมลง' },
+      { id: 'dinosaurs', name: 'ไดโนเสาร์' },
+      { id: 'vehicles', name: 'ยานพาหนะ' },
+      { id: 'fruits', name: 'ผลไม้และอาหาร' },
+      { id: 'shapes', name: 'รูปทรง' },
+      { id: 'custom', name: 'ภาพที่ฉันอัปโหลด' }
+    ];
+
+    // Samples N points equally spaced along an SVG path string
+    function samplePathPoints(svgPathD, count) {
+      if (!svgPathD) return [];
+      const virtualPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      virtualPath.setAttribute('d', svgPathD);
+      const totalLen = virtualPath.getTotalLength();
+      if (!totalLen || totalLen <= 0) return [];
+
+      const pts = [];
+      const step = totalLen / count;
+
+      for (let i = 0; i < count; i++) {
+        const dist = i * step;
+        const pt = virtualPath.getPointAtLength(dist);
+        // Calculate tangent vector for label offset calculation
+        const ptNext = virtualPath.getPointAtLength(Math.min(totalLen, dist + 2));
+        const dx = ptNext.x - pt.x;
+        const dy = ptNext.y - pt.y;
+        const norm = Math.sqrt(dx * dx + dy * dy) || 1;
+        
+        // Outward normal vector (-dy, dx)
+        pts.push({
+          x: Math.round(pt.x * 10) / 10,
+          y: Math.round(pt.y * 10) / 10,
+          nx: -dy / norm,
+          ny: dx / norm,
+          label: '',
+          equation: ''
+        });
+      }
+      return pts;
+    }
+
+    // Generates labels (numbers, alphabet, math problems) according to active settings
+    function generateLabelsForPoints(pts) {
+      const total = pts.length;
+      if (total === 0) return pts;
+
+      const act = state.activityType;
+      const startNum = parseInt(state.startNumber) || 1;
+      const step = parseInt(state.skipStep) || 1;
+
+      pts.forEach((pt, idx) => {
+        let lbl = "";
+        let eq = "";
+
+        if (act === 'number_sequence') {
+          lbl = String(startNum + idx);
+        } 
+        else if (act === 'skip_counting') {
+          lbl = String(startNum + (idx * step));
+        } 
+        else if (act === 'backward_counting') {
+          lbl = String(Math.max(0, startNum + (total - 1 - idx)));
+        } 
+        else if (act === 'alphabet_upper') {
+          // A-Z cycle
+          const charCode = 65 + (idx % 26);
+          lbl = String.fromCharCode(charCode);
+          if (idx >= 26) lbl += (Math.floor(idx / 26) + 1);
+        } 
+        else if (act === 'alphabet_lower') {
+          // a-z cycle
+          const charCode = 97 + (idx % 26);
+          lbl = String.fromCharCode(charCode);
+          if (idx >= 26) lbl += (Math.floor(idx / 26) + 1);
+        } 
+        else if (act === 'custom_sequence') {
+          const list = state.customSequence.length ? state.customSequence : ["1", "2", "3"];
+          lbl = list[idx % list.length];
+        } 
+        else if (act === 'math_equation') {
+          // Math equation mode: Target answer is (startNum + idx)
+          const target = startNum + idx;
+          const mathOp = state.mathOp;
+          
+          if (mathOp === 'add' || (mathOp === 'mixed' && Math.random() > 0.4)) {
+            // Generate A + B = target
+            const a = Math.max(1, Math.floor(Math.random() * (target - 1)));
+            const b = target - a;
+            eq = `${a}+${b}`;
+          } else {
+            // Generate A - B = target
+            const b = Math.floor(Math.random() * 8) + 1;
+            const a = target + b;
+            eq = `${a}-${b}`;
+          }
+          lbl = eq; // Display equation at the dot
+        }
+
+        pt.label = lbl;
+        pt.equation = eq;
+      });
+
+      return pts;
+    }
+
+    // Re-renders the entire worksheet SVG in realtime
+    function renderWorksheet() {
+      const svg = document.getElementById('worksheetSVG');
+      const dotsGroup = document.getElementById('svgDotsGroup');
+      const labelsGroup = document.getElementById('svgLabelsGroup');
+      const connPath = document.getElementById('svgConnectingLine');
+      const silPath = document.getElementById('svgSilhouettePath');
+      const safeGuide = document.getElementById('svgSafeMargin');
+      const gridLayer = document.getElementById('svgGridLayer');
+      const borderRect = document.getElementById('svgBorder');
+
+      // 1. Text elements
+      document.getElementById('svgTitle').textContent = state.title;
+      document.getElementById('svgInstructions').textContent = state.instruction;
+      document.getElementById('svgFooterCredit').textContent = state.footerCredit;
+      document.getElementById('svgStudentInfoBox').style.display = state.showStudentHeader ? 'block' : 'none';
+      document.getElementById('svgPageNumber').style.display = state.showPageNumber ? 'block' : 'none';
+      borderRect.style.display = state.showBorder ? 'block' : 'none';
+
+      // 2. Guides and Grids
+      safeGuide.style.display = state.showSafeArea ? 'block' : 'none';
+      gridLayer.setAttribute('class', state.showGrid ? '' : 'hidden');
+
+      // 3. Silhouette Outline
+      const currTpl = BUILTIN_TEMPLATES.find(t => t.id === state.currentTemplateId);
+      if (currTpl && currTpl.rawPath && state.showSilhouette && !state.traceMode) {
+        silPath.setAttribute('d', currTpl.rawPath);
+        silPath.setAttribute('opacity', state.silhouetteOpacity);
+      } else {
+        silPath.setAttribute('d', '');
+      }
+
+      // 4. Trace Image background if user uploaded custom image
+      const tracerImg = document.getElementById('svgTracerImage');
+      const imgToolbar = document.getElementById('imageControlToolbar');
+      if (state.customTracerImgUrl) {
+        tracerImg.setAttribute('href', state.customTracerImgUrl);
+        const tf = state.tracerTransform;
+        const finalW = tf.baseW * tf.scale;
+        const finalH = tf.baseH * tf.scale;
+        tracerImg.setAttribute('x', tf.x);
+        tracerImg.setAttribute('y', tf.y);
+        tracerImg.setAttribute('width', finalW);
+        tracerImg.setAttribute('height', finalH);
+        tracerImg.setAttribute('opacity', tf.opacity);
+        tracerImg.style.display = 'block';
+        imgToolbar.classList.remove('hidden');
+      } else {
+        tracerImg.style.display = 'none';
+        imgToolbar.classList.add('hidden');
+      }
+
+      // 5. Build Connecting Path String (for Answer Key or Teacher Guide)
+      let pathD = '';
+      if (state.points.length > 1) {
+        pathD = `M ${state.points[0].x} ${state.points[0].y} `;
+        for (let i = 1; i < state.points.length; i++) {
+          pathD += `L ${state.points[i].x} ${state.points[i].y} `;
+        }
+        if (state.closeLoop) {
+          pathD += `Z`;
+        }
+      }
+
+      // Show connecting line if viewing answer key
+      if (state.viewMode === 'answer') {
+        connPath.setAttribute('d', pathD);
+        connPath.setAttribute('stroke', state.answerLineColor);
+        connPath.setAttribute('stroke-width', state.answerLineWidth);
+        if (state.answerLineStyle === 'dashed') {
+          connPath.setAttribute('stroke-dasharray', '8 6');
+        } else if (state.answerLineStyle === 'dotted') {
+          connPath.setAttribute('stroke-dasharray', '2 4');
+        } else {
+          connPath.removeAttribute('stroke-dasharray');
+        }
+      } else {
+        connPath.setAttribute('d', ''); // Blank for kids to draw!
+      }
+
+      // 6. Draw Dots and Labels
+      dotsGroup.innerHTML = '';
+      labelsGroup.innerHTML = '';
+
+      const pts = state.points;
+      const total = pts.length;
+      const r = state.dotRadius;
+      const fSize = state.fontSize;
+      const fColor = state.fontColor;
+      const dColor = state.dotColor;
+
+      pts.forEach((pt, idx) => {
+        const isStart = (idx === 0);
+        const isEnd = (idx === total - 1);
+        const isSelected = (idx === state.selectedPointIndex);
+
+        // Dot Circle
+        if (state.dotShape !== 'none') {
+          const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+          circle.setAttribute('cx', pt.x);
+          circle.setAttribute('cy', pt.y);
+          circle.setAttribute('r', isSelected ? r + 2.5 : r);
+          circle.setAttribute('class', `dot-handle ${isSelected ? 'dot-selected' : ''}`);
+          circle.setAttribute('data-idx', idx);
+
+          if (state.dotShape === 'hollow') {
+            circle.setAttribute('fill', '#ffffff');
+            circle.setAttribute('stroke', isStart && state.highlightStart ? '#10b981' : dColor);
+            circle.setAttribute('stroke-width', '2.5');
+          } else {
+            circle.setAttribute('fill', isStart && state.highlightStart ? '#10b981' : dColor);
+            circle.setAttribute('stroke', '#ffffff');
+            circle.setAttribute('stroke-width', '1.5');
+          }
+          dotsGroup.appendChild(circle);
+        }
+
+        // Label Position Calculation (collision avoidance)
+        let lx = pt.x;
+        let ly = pt.y;
+        const offsetDist = r + 9;
+
+        if (state.labelPosition === 'top') {
+          ly -= offsetDist;
+        } else if (state.labelPosition === 'bottom') {
+          ly += offsetDist + fSize * 0.75;
+        } else if (state.labelPosition === 'left') {
+          lx -= offsetDist + 3;
+          ly += fSize * 0.35;
+        } else if (state.labelPosition === 'right') {
+          lx += offsetDist + 3;
+          ly += fSize * 0.35;
+        } else {
+          // AUTO mode using outward normal vector
+          const nx = pt.nx || 0;
+          const ny = pt.ny || -1;
+          lx += nx * offsetDist;
+          ly += ny * offsetDist + (fSize * 0.35);
+        }
+
+        // Label text element
+        const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        txt.setAttribute('x', lx);
+        txt.setAttribute('y', ly);
+        txt.setAttribute('text-anchor', 'middle');
+        txt.setAttribute('font-family', state.fontFamily);
+        txt.setAttribute('font-size', fSize);
+        txt.setAttribute('font-weight', isStart || isEnd ? '700' : '600');
+        txt.setAttribute('fill', isStart && state.highlightStart ? '#059669' : fColor);
+        txt.setAttribute('class', 'select-none pointer-events-none');
+        txt.textContent = pt.label || String(idx + 1);
+
+        // Highlight tags for START / END
+        if (isStart && state.highlightStart) {
+          const badge = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+          badge.textContent = ' (START)';
+          badge.setAttribute('font-size', Math.max(9, fSize - 3));
+          badge.setAttribute('fill', '#059669');
+          txt.appendChild(badge);
+        } else if (isEnd && state.highlightEnd && !state.closeLoop) {
+          const star = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+          star.textContent = ' ⭐';
+          star.setAttribute('font-size', Math.max(10, fSize - 2));
+          txt.appendChild(star);
+        }
+
+        labelsGroup.appendChild(txt);
+      });
+
+      // Update footer point counter
+      document.getElementById('lblPointCount').textContent = `${total} จุด`;
+    }
+
+    let isDragging = false;
+    let dragPointIndex = -1;
+
+    function initCanvasInteractions() {
+      const svg = document.getElementById('worksheetSVG');
+
+      // Mouse down on SVG
+      svg.addEventListener('mousedown', (e) => {
+        const target = e.target;
+        const pt = getSvgCoordinates(e);
+
+        if (target.classList.contains('dot-handle')) {
+          // Select and start dragging dot
+          dragPointIndex = parseInt(target.getAttribute('data-idx'));
+          state.selectedPointIndex = dragPointIndex;
+          isDragging = true;
+          updateSelectedDotUI();
+          renderWorksheet();
+          e.stopPropagation();
+        } else if (state.traceMode) {
+          // In trace mode, clicking empty canvas adds a new point!
+          pushUndoState();
+          state.points.push({
+            x: Math.round(pt.x),
+            y: Math.round(pt.y),
+            nx: 0,
+            ny: -1,
+            label: '',
+            equation: ''
+          });
+          state.selectedPointIndex = state.points.length - 1;
+          generateLabelsForPoints(state.points);
+          updateSelectedDotUI();
+          renderWorksheet();
+        } else {
+          // Deselect point
+          state.selectedPointIndex = -1;
+          updateSelectedDotUI();
+          renderWorksheet();
+        }
+      });
+
+      // Mouse move (Dragging point)
+      window.addEventListener('mousemove', (e) => {
+        if (!isDragging || dragPointIndex === -1) return;
+        const pt = getSvgCoordinates(e);
+        state.points[dragPointIndex].x = Math.max(40, Math.min(754, Math.round(pt.x)));
+        state.points[dragPointIndex].y = Math.max(40, Math.min(1083, Math.round(pt.y)));
+        renderWorksheet();
+      });
+
+      // Mouse up
+      window.addEventListener('mouseup', () => {
+        if (isDragging) {
+          isDragging = false;
+          dragPointIndex = -1;
+          pushUndoState();
+        }
+      });
+    }
+
+    // Converts client screen coordinate to SVG viewBox space
+    function getSvgCoordinates(e) {
+      const svg = document.getElementById('worksheetSVG');
+      const rect = svg.getBoundingClientRect();
+      const scaleX = svg.viewBox.baseVal.width / rect.width;
+      const scaleY = svg.viewBox.baseVal.height / rect.height;
+      return {
+        x: (e.clientX - rect.left) * scaleX,
+        y: (e.clientY - rect.top) * scaleY
+      };
+    }
+
+    function pushUndoState() {
+      // Trim forward history
+      if (state.historyIndex < state.history.length - 1) {
+        state.history = state.history.slice(0, state.historyIndex + 1);
+      }
+      // Push deep clone of points
+      const snapshot = JSON.stringify(state.points);
+      state.history.push(snapshot);
+      if (state.history.length > 30) state.history.shift();
+      state.historyIndex = state.history.length - 1;
+      updateUndoRedoButtons();
+    }
+
+    function applyUndo() {
+      if (state.historyIndex > 0) {
+        state.historyIndex--;
+        state.points = JSON.parse(state.history[state.historyIndex]);
+        renderWorksheet();
+        updateUndoRedoButtons();
+        showToast("ยกเลิกการกระทำแล้ว (Undo)");
+      }
+    }
+
+    function applyRedo() {
+      if (state.historyIndex < state.history.length - 1) {
+        state.historyIndex++;
+        state.points = JSON.parse(state.history[state.historyIndex]);
+        renderWorksheet();
+        updateUndoRedoButtons();
+        showToast("ทำซ้ำแล้ว (Redo)");
+      }
+    }
+
+    function updateUndoRedoButtons() {
+      document.getElementById('btnUndo').disabled = (state.historyIndex <= 0);
+      document.getElementById('btnRedo').disabled = (state.historyIndex >= state.history.length - 1);
+    }
+
+    function selectTemplate(tplId) {
+      if (tplId === 'blank') {
+        loadBlankCanvas();
+        return;
+      }
+
+      const tpl = BUILTIN_TEMPLATES.find(t => t.id === tplId);
+      if (!tpl) return;
+
+      state.currentTemplateId = tplId;
+      state.customTracerImgUrl = null;
+      state.traceMode = false;
+      document.getElementById('btnTraceModeToggle').classList.remove('bg-amber-100', 'ring-2', 'ring-amber-500');
+      document.getElementById('traceStatusHelp').classList.add('hidden');
+
+      const count = parseInt(document.getElementById('rngPointDensity').value) || 18;
+
+      // Sample points along template outline
+      state.points = samplePathPoints(tpl.rawPath, count);
+      generateLabelsForPoints(state.points);
+      state.selectedPointIndex = -1;
+
+      // Reset history
+      state.history = [];
+      state.historyIndex = -1;
+      pushUndoState();
+
+      renderWorksheet();
+      updateTemplateListUI();
+      showToast(`โหลดเทมเพลต: ${tpl.title}`);
+    }
+
+    // Loads a fresh Blank Canvas for free drawing & placing custom dots
+    function loadBlankCanvas() {
+      state.currentTemplateId = 'blank';
+      state.points = [];
+      state.selectedPointIndex = -1;
+      state.traceMode = true;
+
+      // Switch UI to trace mode
+      const btnTrace = document.getElementById('btnTraceModeToggle');
+      btnTrace.classList.add('bg-amber-100', 'ring-2', 'ring-amber-500');
+      document.getElementById('traceStatusHelp').classList.remove('hidden');
+
+      pushUndoState();
+      renderWorksheet();
+      updateTemplateListUI();
+      showToast("เปิดหน้าเปล่าเรียบร้อยแล้ว: คลิกบนกระดาษเพื่อวางจุด หรือกดอัปโหลดภาพต้นแบบ");
+    }
+
+    function updateTemplateListUI() {
+      const container = document.getElementById('templateListContainer');
+      const search = (document.getElementById('templateSearchInput').value || '').toLowerCase();
+      const activeCat = window.activeCategory || 'all';
+
+      const filtered = BUILTIN_TEMPLATES.filter(t => {
+        const matchSearch = t.title.toLowerCase().includes(search) || t.id.includes(search);
+        const matchCat = (activeCat === 'all' || t.category === activeCat);
+        return matchSearch && matchCat;
+      });
+
+      container.innerHTML = filtered.map(t => {
+        const isSelected = (t.id === state.currentTemplateId);
+        return `
+          <div class="border ${isSelected ? 'border-indigo-600 bg-indigo-50/50' : 'border-slate-200 bg-white'} rounded-xl p-3 hover:border-indigo-300 transition shadow-sm flex items-center gap-3 cursor-pointer" onclick="selectTemplate('${t.id}')">
+            <div class="w-14 h-14 bg-slate-50 border border-slate-100 rounded-lg flex items-center justify-center p-1 shrink-0">
+              <svg viewBox="0 0 100 100" class="w-12 h-12">${t.previewSvg}</svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between">
+                <h4 class="font-bold text-xs text-slate-800 truncate">${t.title}</h4>
+                <span class="text-[10px] px-1.5 py-0.5 rounded font-semibold ${t.difficulty === 'easy' ? 'bg-emerald-100 text-emerald-800' : (t.difficulty === 'medium' ? 'bg-sky-100 text-sky-800' : 'bg-rose-100 text-rose-800')}">
+                  ${t.difficulty.toUpperCase()}
+                </span>
+              </div>
+              <p class="text-[11px] text-slate-500 mt-0.5">วัย: ${t.recommendedAge}</p>
+              <div class="mt-1 flex items-center justify-between">
+                <span class="text-[10px] text-indigo-600 font-medium">กดเพื่อเลือกใช้งาน</span>
+                ${isSelected ? '<span class="text-xs text-indigo-600 font-bold">✓ กำลังใช้</span>' : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function applyDifficulty(level) {
+      let count = 18;
+      if (level === 'easy') count = 14;
+      else if (level === 'medium') count = 28;
+      else if (level === 'hard') count = 50;
+
+      document.getElementById('rngPointDensity').value = count;
+      document.getElementById('valPointDensity').textContent = `${count} จุด`;
+
+      const currTpl = BUILTIN_TEMPLATES.find(t => t.id === state.currentTemplateId);
+      if (currTpl) {
+        state.points = samplePathPoints(currTpl.rawPath, count);
+        generateLabelsForPoints(state.points);
+        pushUndoState();
+        renderWorksheet();
+        showToast(`ปรับระดับเป็น ${level} (${count} จุด)`);
+      }
+    }
+
+    function initCustomImageUploader() {
+      const uploader = document.getElementById('customImageUploader');
+      uploader.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          state.customTracerImgUrl = evt.target.result;
+          state.currentTemplateId = 'blank';
+          state.traceMode = true;
+          
+          // Calculate initial centered positioning
+          centerTracerImage();
+
+          document.getElementById('btnTraceModeToggle').classList.add('bg-amber-100', 'ring-2', 'ring-amber-500');
+          document.getElementById('traceStatusHelp').classList.remove('hidden');
+          renderWorksheet();
+          showToast("อัปโหลดภาพสำเร็จ! ปรับขนาดรูปและคลิกวางจุดลากเส้นตามใจชอบ");
+        };
+        reader.readAsDataURL(file);
+      });
+
+      // Slider listeners for image scale & opacity
+      const rngScale = document.getElementById('rngImageScale');
+      const rngOpacity = document.getElementById('rngImageOpacity');
+      rngScale.addEventListener('input', (e) => {
+        const val = parseInt(e.target.value);
+        state.tracerTransform.scale = val / 100;
+        document.getElementById('lblImageScale').textContent = `${val}%`;
+        centerTracerImage(false);
+        renderWorksheet();
+      });
+
+      rngOpacity.addEventListener('input', (e) => {
+        const val = parseInt(e.target.value);
+        state.tracerTransform.opacity = val / 100;
+        document.getElementById('lblImageOpacity').textContent = `${val}%`;
+        renderWorksheet();
+      });
+    }
+
+    function centerTracerImage(resetScale = true) {
+      const isPortrait = (state.orientation === 'portrait');
+      const isA4 = (state.pageFormat === 'a4');
+      let w = isA4 ? 794 : 816;
+      let h = isA4 ? 1123 : 1056;
+      if (!isPortrait) { const t = w; w = h; h = t; }
+
+      const tf = state.tracerTransform;
+      if (resetScale) {
+        tf.scale = 1.0;
+        tf.baseW = Math.round(w * 0.72);
+        tf.baseH = Math.round(h * 0.60);
+        document.getElementById('rngImageScale').value = 100;
+        document.getElementById('lblImageScale').textContent = '100%';
+      }
+      const curW = tf.baseW * tf.scale;
+      const curH = tf.baseH * tf.scale;
+      tf.x = Math.round((w - curW) / 2);
+      tf.y = Math.round(180 + (h - 220 - curH) / 2);
+      renderWorksheet();
+    }
+
+    function clearTracerImage() {
+      state.customTracerImgUrl = null;
+      renderWorksheet();
+      showToast("ลบภาพต้นแบบออกแล้ว");
+    }
+
+    function showLoading(text) {
+      const overlay = document.getElementById('loadingOverlay');
+      document.getElementById('loadingText').textContent = text || 'กำลังประมวลผล...';
+      overlay.classList.remove('hidden');
+    }
+
+    function hideLoading() {
+      document.getElementById('loadingOverlay').classList.add('hidden');
+    }
+
+    // Export SVG vector file
+    function exportSVG() {
+      const svg = document.getElementById('worksheetSVG');
+      const serializer = new XMLSerializer();
+      const svgStr = serializer.serializeToString(svg);
+      const blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+      downloadBlob(blob, `${slugify(state.title)}.svg`);
+      showToast("ส่งออกไฟล์ SVG เรียบร้อยแล้ว");
+    }
+
+    // Export Raster Image (PNG / JPG) via Offscreen Canvas
+    async function exportImage(format = 'png', transparent = false) {
+      showLoading("กำลังเรนเดอร์รูปภาพความละเอียดสูง 300 DPI...");
+      try {
+        const svg = document.getElementById('worksheetSVG');
+        const serializer = new XMLSerializer();
+        let svgStr = serializer.serializeToString(svg);
+
+        // Standard A4 300 DPI canvas dimensions: 2480 x 3508
+        const canvas = document.createElement('canvas');
+        canvas.width = 2480;
+        canvas.height = 3508;
+        const ctx = canvas.getContext('2d');
+
+        if (!transparent) {
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        const img = new Image();
+        const svgBlob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(svgBlob);
+
+        await new Promise((resolve, reject) => {
+          img.onload = () => {
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            URL.revokeObjectURL(url);
+            resolve();
+          };
+          img.onerror = reject;
+          img.src = url;
+        });
+
+        canvas.toBlob((blob) => {
+          hideLoading();
+          downloadBlob(blob, `${slugify(state.title)}.${format}`);
+          showToast(`ดาวน์โหลดรูปภาพ ${format.toUpperCase()} สำเร็จ!`);
+        }, `image/${format}`);
+
+      } catch (err) {
+        hideLoading();
+        showToast("เกิดข้อผิดพลาดในการสร้างรูปภาพ");
+        console.error(err);
+      }
+    }
+
+    // Export Standalone Print-Ready PDF (A4 / US Letter)
+    async function exportSinglePDF() {
+      showLoading("กำลังจัดพิมพ์เป็นเอกสาร PDF สำหรับพิมพ์...");
+      try {
+        const { jsPDF } = window.jspdf;
+        const isA4 = (state.pageFormat === 'a4');
+        const isPortrait = (state.orientation === 'portrait');
+        
+        const doc = new jsPDF({
+          orientation: isPortrait ? 'p' : 'l',
+          unit: 'mm',
+          format: isA4 ? 'a4' : 'letter'
+        });
+
+        // Convert current SVG to Canvas Image
+        const svg = document.getElementById('worksheetSVG');
+        const serializer = new XMLSerializer();
+        const svgStr = serializer.serializeToString(svg);
+
+        const canvas = document.createElement('canvas');
+        canvas.width = 2480;
+        canvas.height = 3508;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        const img = new Image();
+        const svgBlob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(svgBlob);
+
+        await new Promise((resolve) => {
+          img.onload = () => {
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            URL.revokeObjectURL(url);
+            resolve();
+          };
+          img.src = url;
+        });
+
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+
+        doc.addImage(imgData, 'JPEG', 0, 0, pageWidth, pageHeight);
+        doc.save(`${slugify(state.title)}.pdf`);
+
+        hideLoading();
+        showToast("ดาวน์โหลดเอกสาร PDF สำเร็จแล้ว");
+      } catch (err) {
+        hideLoading();
+        showToast("เกิดข้อผิดพลาดในการสร้าง PDF");
+        console.error(err);
+      }
+    }
+
+    // Export 2-Page PDF containing both Question Sheet & Answer Key
+    async function exportBothPDF() {
+      showLoading("กำลังสร้าง PDF แบบคู่ (ใบงาน + เฉลยท้ายแผ่น)...");
+      try {
+        const { jsPDF } = window.jspdf;
+        const isPortrait = (state.orientation === 'portrait');
+        const doc = new jsPDF({
+          orientation: isPortrait ? 'p' : 'l',
+          unit: 'mm',
+          format: state.pageFormat === 'a4' ? 'a4' : 'letter'
+        });
+        const pw = doc.internal.pageSize.getWidth();
+        const ph = doc.internal.pageSize.getHeight();
+
+        // 1. Render Question Sheet
+        state.viewMode = 'question';
+        renderWorksheet();
+        let imgData1 = await captureCanvasDataUrl();
+        doc.addImage(imgData1, 'JPEG', 0, 0, pw, ph);
+
+        // 2. Add Answer Sheet
+        doc.addPage();
+        state.viewMode = 'answer';
+        renderWorksheet();
+        let imgData2 = await captureCanvasDataUrl();
+        doc.addImage(imgData2, 'JPEG', 0, 0, pw, ph);
+
+        // Reset view mode back to question
+        state.viewMode = 'question';
+        renderWorksheet();
+
+        doc.save(`${slugify(state.title)}_พร้อมเฉลย.pdf`);
+        hideLoading();
+        showToast("ดาวน์โหลดชุดใบงานพร้อมเฉลยเรียบร้อย!");
+      } catch (err) {
+        hideLoading();
+        showToast("สร้างไฟล์ไม่สำเร็จ กรุณาลองใหม่");
+        console.error(err);
+      }
+    }
+
+    async function captureCanvasDataUrl() {
+      const svg = document.getElementById('worksheetSVG');
+      const serializer = new XMLSerializer();
+      const svgStr = serializer.serializeToString(svg);
+      const canvas = document.createElement('canvas');
+      canvas.width = 2480;
+      canvas.height = 3508;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const img = new Image();
+      const blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+
+      await new Promise((resolve) => {
+        img.onload = () => {
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          URL.revokeObjectURL(url);
+          resolve();
+        };
+        img.src = url;
+      });
+      return canvas.toDataURL('image/jpeg', 0.95);
+    }
+
+    function openBatchModal() {
+      const container = document.getElementById('batchTemplateSelector');
+      container.innerHTML = BUILTIN_TEMPLATES.map(t => `
+        <label class="border border-slate-200 rounded-lg p-2 flex flex-col items-center text-center cursor-pointer hover:bg-slate-50 transition">
+          <input type="checkbox" name="batchTemplateCheck" value="${t.id}" class="rounded text-indigo-600 mb-1.5" onchange="updateBatchCountBadge()">
+          <div class="w-10 h-10 bg-slate-100 rounded flex items-center justify-center p-1">
+            <svg viewBox="0 0 100 100" class="w-8 h-8">${t.previewSvg}</svg>
+          </div>
+          <span class="text-[11px] font-semibold text-slate-700 mt-1 truncate w-full">${t.title}</span>
+        </label>
+      `).join('');
+      updateBatchCountBadge();
+      openModal('batchModal');
+    }
+
+    function updateBatchCountBadge() {
+      const checks = document.querySelectorAll('input[name="batchTemplateCheck"]:checked');
+      document.getElementById('batchCountBadge').textContent = `เลือกแล้ว ${checks.length} หน้า`;
+      document.getElementById('btnGenerateBatchPDF').disabled = (checks.length === 0);
+    }
+
+    async function generateBatchPDF() {
+      const checks = Array.from(document.querySelectorAll('input[name="batchTemplateCheck"]:checked')).map(c => c.value);
+      if (checks.length === 0) return;
+
+      closeModal('batchModal');
+      showLoading(`กำลังสร้างสมุดใบงาน ${checks.length} หน้า พร้อมรวมเฉลย...`);
+
+      try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({
+          orientation: 'p',
+          unit: 'mm',
+          format: 'a4'
+        });
+        const pw = doc.internal.pageSize.getWidth();
+        const ph = doc.internal.pageSize.getHeight();
+
+        const savedCurrentTpl = state.currentTemplateId;
+        const savedViewMode = state.viewMode;
+        const includeAnswers = document.getElementById('chkBatchIncludeAnswers').checked;
+
+        // Page Loop: Questions
+        for (let i = 0; i < checks.length; i++) {
+          if (i > 0) doc.addPage();
+          const tplId = checks[i];
+          const tpl = BUILTIN_TEMPLATES.find(t => t.id === tplId);
+          state.currentTemplateId = tplId;
+          state.title = `${tpl.title}`;
+          state.points = samplePathPoints(tpl.rawPath, 20);
+          generateLabelsForPoints(state.points);
+          state.viewMode = 'question';
+          document.getElementById('svgPageNumber').textContent = `หน้า ${i + 1}/${checks.length + (includeAnswers ? checks.length : 0)}`;
+
+          renderWorksheet();
+          const imgData = await captureCanvasDataUrl();
+          doc.addImage(imgData, 'JPEG', 0, 0, pw, ph);
+        }
+
+        // Optional: Answer Keys at back of book
+        if (includeAnswers) {
+          for (let i = 0; i < checks.length; i++) {
+            doc.addPage();
+            const tplId = checks[i];
+            const tpl = BUILTIN_TEMPLATES.find(t => t.id === tplId);
+            state.currentTemplateId = tplId;
+            state.title = `เฉลย: ${tpl.title}`;
+            state.points = samplePathPoints(tpl.rawPath, 20);
+            generateLabelsForPoints(state.points);
+            state.viewMode = 'answer';
+            document.getElementById('svgPageNumber').textContent = `เฉลย หน้า ${i + 1}/${checks.length}`;
+
+            renderWorksheet();
+            const imgData = await captureCanvasDataUrl();
+            doc.addImage(imgData, 'JPEG', 0, 0, pw, ph);
+          }
+        }
+
+        // Restore user's session
+        state.currentTemplateId = savedCurrentTpl;
+        state.viewMode = savedViewMode;
+        renderWorksheet();
+
+        doc.save(`สมุดรวมใบงานลากเส้นเชื่อมจุด_${checks.length}หน้า.pdf`);
+        hideLoading();
+        showToast("สร้างและบันทึกสมุดรวมใบงานสำเร็จแล้ว!");
+      } catch (err) {
+        hideLoading();
+        showToast("เกิดข้อผิดพลาดในการสร้างสมุดชุดรวม");
+        console.error(err);
+      }
+    }
+
+    function saveCurrentProject() {
+      const name = document.getElementById('inpProjectName').value || 'แบบฝึกหัดของฉัน';
+      const projectData = {
+        name: name,
+        updatedAt: new Date().toISOString(),
+        state: state
+      };
+
+      try {
+        const stored = JSON.parse(localStorage.getItem(APP_CONFIG.defaultStorageKey) || '[]');
+        const existingIdx = stored.findIndex(p => p.name === name);
+        if (existingIdx >= 0) {
+          stored[existingIdx] = projectData;
+        } else {
+          stored.unshift(projectData);
+        }
+        localStorage.setItem(APP_CONFIG.defaultStorageKey, JSON.stringify(stored));
+        document.getElementById('headerProjectName').textContent = name;
+        showToast(`บันทึกโปรเจกต์ "${name}" สำเร็จ`);
+        renderSavedProjectsList();
+      } catch (e) {
+        showToast("ไม่สามารถบันทึกได้ (ความจำเต็มหรือเบราว์เซอร์ไม่อนุญาต)");
+      }
+    }
+
+    function renderSavedProjectsList() {
+      const listContainer = document.getElementById('savedProjectsList');
+      const stored = JSON.parse(localStorage.getItem(APP_CONFIG.defaultStorageKey) || '[]');
+
+      if (stored.length === 0) {
+        listContainer.innerHTML = '<div class="text-slate-400 text-center py-4">ยังไม่มีโปรเจกต์ที่บันทึกไว้</div>';
+        return;
+      }
+
+      listContainer.innerHTML = stored.map((p, idx) => `
+        <div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-200">
+          <div class="truncate mr-2">
+            <div class="font-bold text-slate-800 text-xs truncate">${p.name}</div>
+            <div class="text-[10px] text-slate-400">${new Date(p.updatedAt).toLocaleDateString('th-TH')}</div>
+          </div>
+          <div class="flex gap-1">
+            <button onclick="loadSavedProject(${idx})" class="px-2 py-1 bg-white hover:bg-slate-100 text-indigo-600 border border-indigo-200 rounded text-[11px] font-medium">เปิด</button>
+            <button onclick="deleteSavedProject(${idx})" class="px-2 py-1 bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 rounded text-[11px] font-medium">ลบ</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function loadSavedProject(idx) {
+      const stored = JSON.parse(localStorage.getItem(APP_CONFIG.defaultStorageKey) || '[]');
+      const proj = stored[idx];
+      if (!proj) return;
+
+      Object.assign(state, proj.state);
+      document.getElementById('headerProjectName').textContent = proj.name;
+      document.getElementById('inpProjectName').value = proj.name;
+      closeModal('projectModal');
+      syncUIWithState();
+      renderWorksheet();
+      showToast(`โหลดโปรเจกต์ "${proj.name}" แล้ว`);
+    }
+
+    function deleteSavedProject(idx) {
+      openConfirm("ลบโปรเจกต์", "คุณต้องการลบโปรเจกต์นี้ถาวรใช่หรือไม่?", () => {
+        const stored = JSON.parse(localStorage.getItem(APP_CONFIG.defaultStorageKey) || '[]');
+        stored.splice(idx, 1);
+        localStorage.setItem(APP_CONFIG.defaultStorageKey, JSON.stringify(stored));
+        renderSavedProjectsList();
+        showToast("ลบโปรเจกต์เรียบร้อย");
+      });
+    }
+
+    function exportProjectJSON() {
+      const projectData = {
+        app: APP_CONFIG.name,
+        version: APP_CONFIG.version,
+        exportedAt: new Date().toISOString(),
+        data: state
+      };
+      const blob = new Blob([JSON.stringify(projectData, null, 2)], { type: 'application/json' });
+      downloadBlob(blob, `${slugify(state.title)}.json`);
+      showToast("ส่งออกไฟล์โปรเจกต์ JSON สำเร็จ");
+    }
+
+    function importProjectJSON(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        try {
+          const parsed = JSON.parse(evt.target.result);
+          if (parsed.data) {
+            Object.assign(state, parsed.data);
+            syncUIWithState();
+            renderWorksheet();
+            closeModal('projectModal');
+            showToast("นำเข้าโปรเจกต์สำเร็จ!");
+          }
+        } catch (err) {
+          showToast("ไฟล์ JSON ไม่ถูกต้อง");
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function syncUIWithState() {
+      document.getElementById('inpWorksheetTitle').value = state.title;
+      document.getElementById('inpWorksheetInstructions').value = state.instruction;
+      document.getElementById('inpFooterCredit').value = state.footerCredit;
+      document.getElementById('selActivityType').value = state.activityType;
+      document.getElementById('inpStartNumber').value = state.startNumber;
+      document.getElementById('selSkipStep').value = state.skipStep;
+      document.getElementById('selMathOp').value = state.mathOp;
+      document.getElementById('selMathMax').value = state.mathMax;
+      document.getElementById('chkCloseLoop').checked = state.closeLoop;
+      document.getElementById('rngDotRadius').value = state.dotRadius;
+      document.getElementById('lblDotRadius').textContent = state.dotRadius;
+      document.getElementById('clrDotColor').value = state.dotColor;
+      document.getElementById('selDotShape').value = state.dotShape;
+      document.getElementById('rngFontSize').value = state.fontSize;
+      document.getElementById('lblFontSize').textContent = state.fontSize;
+      document.getElementById('clrFontColor').value = state.fontColor;
+      document.getElementById('selFontFamily').value = state.fontFamily;
+      document.getElementById('selLabelPosition').value = state.labelPosition;
+      document.getElementById('chkHighlightStart').checked = state.highlightStart;
+      document.getElementById('chkHighlightEnd').checked = state.highlightEnd;
+      document.getElementById('chkShowStudentHeader').checked = state.showStudentHeader;
+      document.getElementById('chkShowPageNumber').checked = state.showPageNumber;
+      document.getElementById('chkShowBorder').checked = state.showBorder;
+
+      updateActivityVisibility();
+    }
+
+    function updateActivityVisibility() {
+      const act = state.activityType;
+      const rowRange = document.getElementById('rowRangeSettings');
+      const colSkip = document.getElementById('colSkipStep');
+      const rowMath = document.getElementById('rowMathSettings');
+      const rowCustom = document.getElementById('rowCustomList');
+
+      rowRange.classList.add('hidden');
+      colSkip.classList.add('hidden');
+      rowMath.classList.add('hidden');
+      rowCustom.classList.add('hidden');
+
+      if (act === 'number_sequence' || act === 'backward_counting') {
+        rowRange.classList.remove('hidden');
+      } else if (act === 'skip_counting') {
+        rowRange.classList.remove('hidden');
+        colSkip.classList.remove('hidden');
+      } else if (act === 'math_equation') {
+        rowRange.classList.remove('hidden');
+        rowMath.classList.remove('hidden');
+      } else if (act === 'custom_sequence') {
+        rowCustom.classList.remove('hidden');
+      }
+
+      // Update bottom status bar label
+      const sel = document.getElementById('selActivityType');
+      document.getElementById('lblCurrentMode').textContent = sel.options[sel.selectedIndex].text;
+    }
+
+    function setPageFormat(format) {
+      state.pageFormat = format;
+      const isA4 = (format === 'a4');
+
+      // Sidebar buttons
+      document.getElementById('btnFormatA4').className = isA4 
+        ? 'p-2 border-2 border-indigo-600 bg-indigo-50 text-indigo-700 rounded-lg font-bold text-center' 
+        : 'p-2 border border-slate-200 text-slate-700 rounded-lg font-medium text-center';
+      document.getElementById('btnFormatLetter').className = !isA4 
+        ? 'p-2 border-2 border-indigo-600 bg-indigo-50 text-indigo-700 rounded-lg font-bold text-center' 
+        : 'p-2 border border-slate-200 text-slate-700 rounded-lg font-medium text-center';
+      
+      // Header quick switch buttons
+      const qA4 = document.getElementById('quickBtnA4');
+      const qLetter = document.getElementById('quickBtnLetter');
+      if (isA4) {
+        qA4.className = 'px-2.5 py-1 rounded-md bg-white text-indigo-700 shadow-sm font-bold transition';
+        qLetter.className = 'px-2.5 py-1 rounded-md text-slate-600 hover:text-indigo-600 transition';
+      } else {
+        qLetter.className = 'px-2.5 py-1 rounded-md bg-white text-indigo-700 shadow-sm font-bold transition';
+        qA4.className = 'px-2.5 py-1 rounded-md text-slate-600 hover:text-indigo-600 transition';
+      }
+
+      updatePageGeometry();
+      showToast(`สลับขนาดกระดาษเป็น ${isA4 ? 'A4' : 'US Letter'}`);
+    }
+
+    function setOrientation(ori) {
+      state.orientation = ori;
+      document.getElementById('btnOriPortrait').className = ori === 'portrait' 
+        ? 'p-2 border-2 border-indigo-600 bg-indigo-50 text-indigo-700 rounded-lg font-bold text-center flex items-center justify-center gap-1.5' 
+        : 'p-2 border border-slate-200 text-slate-700 rounded-lg font-medium text-center flex items-center justify-center gap-1.5';
+      document.getElementById('btnOriLandscape').className = ori === 'landscape' 
+        ? 'p-2 border-2 border-indigo-600 bg-indigo-50 text-indigo-700 rounded-lg font-bold text-center flex items-center justify-center gap-1.5' 
+        : 'p-2 border border-slate-200 text-slate-700 rounded-lg font-medium text-center flex items-center justify-center gap-1.5';
+
+      updatePageGeometry();
+    }
+
+    function updatePageGeometry() {
+      const svg = document.getElementById('worksheetSVG');
+      const wrapper = document.getElementById('paperWrapper');
+      const isPortrait = (state.orientation === 'portrait');
+      const isA4 = (state.pageFormat === 'a4');
+
+      // Accurate pixel dimensions: A4 (794 x 1123), US Letter (816 x 1056)
+      let w = isA4 ? 794 : 816;
+      let h = isA4 ? 1123 : 1056;
+
+      if (!isPortrait) {
+        const tmp = w;
+        w = h;
+        h = tmp;
+      }
+
+      svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+      wrapper.style.width = `${Math.round(w * 0.62)}px`;
+      wrapper.style.height = `${Math.round(h * 0.62)}px`;
+
+      // Dynamically reposition worksheet frames and headers to match exact paper boundary
+      const m = state.margin || 40;
+      const safeMargin = document.getElementById('svgSafeMargin');
+      safeMargin.setAttribute('x', m);
+      safeMargin.setAttribute('y', m);
+      safeMargin.setAttribute('width', w - (m * 2));
+      safeMargin.setAttribute('height', h - (m * 2));
+
+      const borderRect = document.getElementById('svgBorder');
+      borderRect.setAttribute('x', m - 10);
+      borderRect.setAttribute('y', m - 10);
+      borderRect.setAttribute('width', w - ((m - 10) * 2));
+      borderRect.setAttribute('height', h - ((m - 10) * 2));
+
+      // Center title and instructions dynamically
+      const centerX = Math.round(w / 2);
+      document.getElementById('svgTitle').setAttribute('x', centerX);
+      document.getElementById('svgInstructions').setAttribute('x', centerX);
+
+      // Reposition footer
+      const footerY = h - 35;
+      document.getElementById('svgFooterGroup').setAttribute('transform', `translate(${m}, ${footerY})`);
+      document.getElementById('svgPageNumber').setAttribute('x', w - (m * 2));
+
+      document.getElementById('labelPageType').textContent = `${isA4 ? 'A4' : 'US Letter'} ${isPortrait ? 'แนวตั้ง' : 'แนวนอน'}`;
+      renderWorksheet();
+    }
+
+    function setInstructionPreset(lang) {
+      if (lang === 'th') {
+        document.getElementById('inpWorksheetInstructions').value = "ลากเส้นเชื่อมจุดตามลำดับตัวเลข แล้วระบายสีภาพให้สวยงาม";
+      } else {
+        document.getElementById('inpWorksheetInstructions').value = "Connect the dots in numerical order, then color the picture.";
+      }
+      state.instruction = document.getElementById('inpWorksheetInstructions').value;
+      renderWorksheet();
+    }
+
+    function updateSelectedDotUI() {
+      const idx = state.selectedPointIndex;
+      const btnInsert = document.getElementById('btnInsertDot');
+      const btnDelete = document.getElementById('btnDeleteDot');
+      const info = document.getElementById('lblSelectedDotInfo');
+
+      if (idx >= 0 && idx < state.points.length) {
+        info.innerHTML = `เลือกจุดที่ <b>#${idx + 1}</b> (${state.points[idx].label || ''})`;
+        btnInsert.disabled = false;
+        btnDelete.disabled = false;
+      } else {
+        info.textContent = 'คลิกเลือกจุดบนกระดาษเพื่อขยับ/ลบ';
+        btnInsert.disabled = true;
+        btnDelete.disabled = true;
+      }
+    }
+
+    function showToast(msg) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = 'bg-slate-900/90 text-white text-xs px-4 py-2.5 rounded-xl shadow-xl flex items-center gap-2 pointer-events-auto transition-all duration-200 transform translate-y-2';
+      toast.innerHTML = `
+        <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+        <span>${msg}</span>
+      `;
+      container.appendChild(toast);
+      setTimeout(() => toast.classList.remove('translate-y-2'), 10);
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 200);
+      }, 3000);
+    }
+
+    function openModal(id) {
+      document.getElementById(id).classList.remove('hidden');
+      if (id === 'projectModal') renderSavedProjectsList();
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+    }
+
+    function openConfirm(title, msg, onConfirm) {
+      document.getElementById('confirmModalTitle').textContent = title;
+      document.getElementById('confirmModalMessage').textContent = msg;
+      const okBtn = document.getElementById('btnConfirmOk');
+      const cancelBtn = document.getElementById('btnConfirmCancel');
+
+      const cleanup = () => {
+        closeModal('confirmModal');
+        okBtn.onclick = null;
+        cancelBtn.onclick = null;
+      };
+
+      okBtn.onclick = () => {
+        cleanup();
+        onConfirm();
+      };
+      cancelBtn.onclick = cleanup;
+      openModal('confirmModal');
+    }
+
+    function switchTab(tabId) {
+      ['tabActivity', 'tabStyle', 'tabHeader', 'tabPage'].forEach(t => {
+        const el = document.getElementById(t);
+        const btn = document.getElementById(`tabBtn_${t}`);
+        if (t === tabId) {
+          el.classList.remove('hidden');
+          btn.className = 'px-3 py-2.5 border-b-2 border-indigo-600 text-indigo-600 bg-white transition whitespace-nowrap font-semibold';
+        } else {
+          el.classList.add('hidden');
+          btn.className = 'px-3 py-2.5 border-b-2 border-transparent hover:text-indigo-600 transition whitespace-nowrap';
+        }
+      });
+    }
+
+    function slugify(text) {
+      return (text || 'worksheet').replace(/\s+/g, '_').replace(/[^\w\u0E00-\u0E7F-]/g, '');
+    }
+
+    function downloadBlob(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 200);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      // 1. Render Categories Filter
+      const catPillList = document.getElementById('categoryPillList');
+      catPillList.innerHTML = CATEGORIES.map(c => `
+        <button onclick="filterCategory('${c.id}')" class="px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap transition ${c.id === 'all' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}" id="catBtn_${c.id}">
+          ${c.name}
+        </button>
+      `).join('');
+
+      window.filterCategory = (catId) => {
+        window.activeCategory = catId;
+        CATEGORIES.forEach(c => {
+          const el = document.getElementById(`catBtn_${c.id}`);
+          if (c.id === catId) {
+            el.className = 'px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap transition bg-indigo-600 text-white';
+          } else {
+            el.className = 'px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap transition bg-slate-100 text-slate-600 hover:bg-slate-200';
+          }
+        });
+        updateTemplateListUI();
+      };
+
+      // 2. Search Box Listener
+      document.getElementById('templateSearchInput').addEventListener('input', updateTemplateListUI);
+
+      // 3. Question / Answer Sheet View Switcher
+      const btnViewQ = document.getElementById('btnViewQuestion');
+      const btnViewA = document.getElementById('btnViewAnswer');
+      btnViewQ.addEventListener('click', () => {
+        state.viewMode = 'question';
+        btnViewQ.className = 'px-3 py-1.5 rounded-md bg-white text-indigo-700 shadow-sm font-semibold transition';
+        btnViewA.className = 'px-3 py-1.5 rounded-md text-slate-600 hover:text-indigo-600 transition';
+        renderWorksheet();
+      });
+      btnViewA.addEventListener('click', () => {
+        state.viewMode = 'answer';
+        btnViewA.className = 'px-3 py-1.5 rounded-md bg-white text-indigo-700 shadow-sm font-semibold transition';
+        btnViewQ.className = 'px-3 py-1.5 rounded-md text-slate-600 hover:text-indigo-600 transition';
+        renderWorksheet();
+      });
+
+      // 4. Trace Mode Toggle
+      const btnTrace = document.getElementById('btnTraceModeToggle');
+      btnTrace.addEventListener('click', () => {
+        state.traceMode = !state.traceMode;
+        if (state.traceMode) {
+          btnTrace.classList.add('bg-amber-100', 'ring-2', 'ring-amber-500');
+          document.getElementById('traceStatusHelp').classList.remove('hidden');
+          showToast("เปิดโหมดวาดจุด: คลิกบนกระดาษเพื่อเพิ่มจุด");
+        } else {
+          btnTrace.classList.remove('bg-amber-100', 'ring-2', 'ring-amber-500');
+          document.getElementById('traceStatusHelp').classList.add('hidden');
+          showToast("ออกจากโหมดวาดจุด");
+        }
+        renderWorksheet();
+      });
+
+      // 5. Undo / Redo
+      document.getElementById('btnUndo').addEventListener('click', applyUndo);
+      document.getElementById('btnRedo').addEventListener('click', applyRedo);
+      window.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+          e.preventDefault();
+          if (e.shiftKey) applyRedo();
+          else applyUndo();
+        } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+          e.preventDefault();
+          applyRedo();
+        }
+      });
+
+      // 6. Center Object on Canvas
+      document.getElementById('btnCenterObject').addEventListener('click', () => {
+        if (state.points.length === 0) return;
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        state.points.forEach(p => {
+          if (p.x < minX) minX = p.x;
+          if (p.x > maxX) maxX = p.x;
+          if (p.y < minY) minY = p.y;
+          if (p.y > maxY) maxY = p.y;
+        });
+        const curCenterX = (minX + maxX) / 2;
+        const curCenterY = (minY + maxY) / 2;
+        const targetX = 397;
+        const targetY = 580;
+        const dx = targetX - curCenterX;
+        const dy = targetY - curCenterY;
+
+        pushUndoState();
+        state.points.forEach(p => {
+          p.x += dx;
+          p.y += dy;
+        });
+        renderWorksheet();
+        showToast("จัดกึ่งกลางภาพสำเร็จ");
+      });
+
+      // 7. Activity Settings Listeners
+      document.getElementById('selActivityType').addEventListener('change', (e) => {
+        state.activityType = e.target.value;
+        updateActivityVisibility();
+        generateLabelsForPoints(state.points);
+        renderWorksheet();
+      });
+      document.getElementById('inpStartNumber').addEventListener('input', (e) => {
+        state.startNumber = parseInt(e.target.value) || 1;
+        generateLabelsForPoints(state.points);
+        renderWorksheet();
+      });
+      document.getElementById('selSkipStep').addEventListener('change', (e) => {
+        state.skipStep = parseInt(e.target.value) || 2;
+        generateLabelsForPoints(state.points);
+        renderWorksheet();
+      });
+      document.getElementById('selMathOp').addEventListener('change', (e) => {
+        state.mathOp = e.target.value;
+        generateLabelsForPoints(state.points);
+        renderWorksheet();
+      });
+      document.getElementById('selMathMax').addEventListener('change', (e) => {
+        state.mathMax = parseInt(e.target.value) || 20;
+        generateLabelsForPoints(state.points);
+        renderWorksheet();
+      });
+      document.getElementById('txtCustomSequence').addEventListener('input', (e) => {
+        state.customSequence = e.target.value.split(',').map(s => s.trim()).filter(Boolean);
+        generateLabelsForPoints(state.points);
+        renderWorksheet();
+      });
+      document.getElementById('btnRegenerateLabels').addEventListener('click', () => {
+        generateLabelsForPoints(state.points);
+        renderWorksheet();
+        showToast("สร้างหมายเลขและสุ่มโจทย์ใหม่แล้ว");
+      });
+      document.getElementById('chkCloseLoop').addEventListener('change', (e) => {
+        state.closeLoop = e.target.checked;
+        renderWorksheet();
+      });
+
+      // 8. Density slider
+      document.getElementById('rngPointDensity').addEventListener('input', (e) => {
+        const val = e.target.value;
+        document.getElementById('valPointDensity').textContent = `${val} จุด`;
+      });
+      document.getElementById('rngPointDensity').addEventListener('change', (e) => {
+        const val = parseInt(e.target.value);
+        const currTpl = BUILTIN_TEMPLATES.find(t => t.id === state.currentTemplateId);
+        if (currTpl) {
+          state.points = samplePathPoints(currTpl.rawPath, val);
+          generateLabelsForPoints(state.points);
+          pushUndoState();
+          renderWorksheet();
+        }
+      });
+
+      // 9. Style Tab Listeners
+      document.getElementById('rngDotRadius').addEventListener('input', (e) => {
+        state.dotRadius = parseFloat(e.target.value);
+        document.getElementById('lblDotRadius').textContent = state.dotRadius;
+        renderWorksheet();
+      });
+      document.getElementById('clrDotColor').addEventListener('input', (e) => {
+        state.dotColor = e.target.value;
+        document.getElementById('valDotColor').textContent = state.dotColor;
+        renderWorksheet();
+      });
+      document.getElementById('selDotShape').addEventListener('change', (e) => {
+        state.dotShape = e.target.value;
+        renderWorksheet();
+      });
+      document.getElementById('rngFontSize').addEventListener('input', (e) => {
+        state.fontSize = parseInt(e.target.value);
+        document.getElementById('lblFontSize').textContent = state.fontSize;
+        renderWorksheet();
+      });
+      document.getElementById('clrFontColor').addEventListener('input', (e) => {
+        state.fontColor = e.target.value;
+        document.getElementById('valFontColor').textContent = state.fontColor;
+        renderWorksheet();
+      });
+      document.getElementById('selFontFamily').addEventListener('change', (e) => {
+        state.fontFamily = e.target.value;
+        renderWorksheet();
+      });
+      document.getElementById('selLabelPosition').addEventListener('change', (e) => {
+        state.labelPosition = e.target.value;
+        renderWorksheet();
+      });
+      document.getElementById('chkHighlightStart').addEventListener('change', (e) => {
+        state.highlightStart = e.target.checked;
+        renderWorksheet();
+      });
+      document.getElementById('chkHighlightEnd').addEventListener('change', (e) => {
+        state.highlightEnd = e.target.checked;
+        renderWorksheet();
+      });
+      document.getElementById('rngSilhouetteOpacity').addEventListener('input', (e) => {
+        const pct = parseInt(e.target.value);
+        state.silhouetteOpacity = pct / 100;
+        document.getElementById('lblSilhouetteOpacity').textContent = `${pct}%`;
+        renderWorksheet();
+      });
+      document.getElementById('selAnswerLineStyle').addEventListener('change', (e) => {
+        state.answerLineStyle = e.target.value;
+        renderWorksheet();
+      });
+      document.getElementById('clrAnswerLine').addEventListener('input', (e) => {
+        state.answerLineColor = e.target.value;
+        renderWorksheet();
+      });
+
+      // 10. Worksheet Header & Info Listeners
+      document.getElementById('inpWorksheetTitle').addEventListener('input', (e) => {
+        state.title = e.target.value;
+        renderWorksheet();
+      });
+      document.getElementById('inpWorksheetInstructions').addEventListener('input', (e) => {
+        state.instruction = e.target.value;
+        renderWorksheet();
+      });
+      document.getElementById('chkShowStudentHeader').addEventListener('change', (e) => {
+        state.showStudentHeader = e.target.checked;
+        renderWorksheet();
+      });
+      document.getElementById('chkShowPageNumber').addEventListener('change', (e) => {
+        state.showPageNumber = e.target.checked;
+        renderWorksheet();
+      });
+      document.getElementById('chkShowBorder').addEventListener('change', (e) => {
+        state.showBorder = e.target.checked;
+        renderWorksheet();
+      });
+      document.getElementById('inpFooterCredit').addEventListener('input', (e) => {
+        state.footerCredit = e.target.value;
+        renderWorksheet();
+      });
+
+      // 11. Canvas view toggles
+      document.getElementById('toggleSafeArea').addEventListener('change', (e) => {
+        state.showSafeArea = e.target.checked;
+        renderWorksheet();
+      });
+      document.getElementById('toggleGrid').addEventListener('change', (e) => {
+        state.showGrid = e.target.checked;
+        renderWorksheet();
+      });
+      document.getElementById('toggleSilhouette').addEventListener('change', (e) => {
+        state.showSilhouette = e.target.checked;
+        renderWorksheet();
+      });
+
+      // 12. Zoom Controls
+      const wrapper = document.getElementById('paperWrapper');
+      let currentScale = 1.0;
+      const applyZoom = (scale) => {
+        currentScale = Math.max(0.4, Math.min(2.0, scale));
+        wrapper.style.transform = `scale(${currentScale})`;
+        document.getElementById('labelScaleIndicator').textContent = `${Math.round(currentScale * 100)}%`;
+      };
+      document.getElementById('btnZoomIn').addEventListener('click', () => applyZoom(currentScale + 0.1));
+      document.getElementById('btnZoomOut').addEventListener('click', () => applyZoom(currentScale - 0.1));
+      document.getElementById('btnZoomReset').addEventListener('click', () => applyZoom(1.0));
+
+      // 13. Dot Edit Actions (Insert / Delete)
+      document.getElementById('btnInsertDot').addEventListener('click', () => {
+        const idx = state.selectedPointIndex;
+        if (idx >= 0 && idx < state.points.length) {
+          pushUndoState();
+          const nextIdx = (idx + 1) % state.points.length;
+          const p1 = state.points[idx];
+          const p2 = state.points[nextIdx];
+          const newPt = {
+            x: Math.round((p1.x + p2.x) / 2),
+            y: Math.round((p1.y + p2.y) / 2),
+            nx: p1.nx,
+            ny: p1.ny,
+            label: '',
+            equation: ''
+          };
+          state.points.splice(idx + 1, 0, newPt);
+          generateLabelsForPoints(state.points);
+          state.selectedPointIndex = idx + 1;
+          updateSelectedDotUI();
+          renderWorksheet();
+          showToast(`แทรกจุดใหม่ที่ #${idx + 2} สำเร็จ`);
+        }
+      });
+
+      document.getElementById('btnDeleteDot').addEventListener('click', () => {
+        const idx = state.selectedPointIndex;
+        if (idx >= 0 && state.points.length > 3) {
+          pushUndoState();
+          state.points.splice(idx, 1);
+          generateLabelsForPoints(state.points);
+          state.selectedPointIndex = -1;
+          updateSelectedDotUI();
+          renderWorksheet();
+          showToast("ลบจุดที่เลือกเรียบร้อย");
+        } else {
+          showToast("ต้องมีจุดอย่างน้อย 3 จุดในใบงาน");
+        }
+      });
+
+      // 14. Export Menu Dropdown Toggle
+      const btnExportMenu = document.getElementById('btnExportMenu');
+      const exportDropdown = document.getElementById('exportDropdown');
+      btnExportMenu.addEventListener('click', (e) => {
+        e.stopPropagation();
+        exportDropdown.classList.toggle('hidden');
+      });
+      window.addEventListener('click', () => {
+        exportDropdown.classList.add('hidden');
+      });
+
+      // 15. Prevent accidental tab close with unsaved edits
+      window.addEventListener('beforeunload', (e) => {
+        if (state.points.length > 0) {
+          e.preventDefault();
+          e.returnValue = '';
+        }
+      });
+
+      // Initialize Core Engine
+      initCanvasInteractions();
+      initCustomImageUploader();
+      selectTemplate('cat');
+      updateTemplateListUI();
+      updatePageGeometry();
+    });
+  </script>
+</body>
+</html>
